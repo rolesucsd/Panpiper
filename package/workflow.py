@@ -33,6 +33,7 @@ class Workflow(object):
                '--use-conda',
                '--latency-wait', '20',
                '-s', snakefile,
+               '-j', '1',
                '--config',
                'out='+self.output,
                'fastq='+self.fastq,
@@ -105,7 +106,7 @@ class Workflow(object):
             logging.info('Unlocking working directory.')
             cmd.append('--unlock')
 
-        logging.debug(' '.join(cmd))
+        logging.info(' '.join(cmd))
         # Start snakemake process and read stdout and stderr (also save in logger)
         process = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, text=True)
         if self.log_lvl == 'DEBUG':

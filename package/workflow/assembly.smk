@@ -12,7 +12,8 @@ import distutils.util
 OUT = config['out']
 FASTQ = config['fastq']
 PARAMS = config['params']
-ASSEMBLY_OUT = os.path.join(WD, 'fasta_files.txt')
+ASSEMBLY_OUT = os.path.join(OUT, 'fasta_files.txt')
+(READS,) = glob_wildcards(os.path.join(FASTQ,"{file}_2.fastq"))
 
 with open(PARAMS, 'r') as fh:   
     fl = [x.strip().split() for x in fh.readlines()]
@@ -41,13 +42,13 @@ rule shovill:
         os.path.join(OUT, 'Assembly/{file}/contigs.fa'),
     shell:
         """
-        shovill --nocorr --trim --force --cpus 0 --ram 8 --opts '-m 1024' --tmpdir {params.tmp} --outdir {params.prefix} --R1 {input.read1} --R2 {input.read2} &> {log} || touch {output}
+        shovill --nocorr --trim --force --cpus 0 --ram 8 --opts '-m 1024' --outdir {params.prefix} --R1 {input.read1} --R2 {input.read2} &> {log} || touch {output}
         """
 
 # Moves files that were successfully assembled to the input folder for use in the next workflow
 rule move_complete:
     input:
-        expand(os.path.join(OUT, 'Assembly/{file}/contigs.fa'), file=raw_reads),
+        expand(os.path.join(OUT, 'Assembly/{file}/contigs.fa'), file=READS),
     params:
         os.path.join(OUT, 'Assembly/')
     log:

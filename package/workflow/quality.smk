@@ -1,36 +1,44 @@
 """
 Authors: Renee Oles
-Date Updated: 8/5/21
-Purpose: Snakemake file that takes assemblies and performs quality control and filtering
-Input: 
-    Isolate reference(s)- fasta file
-    Sample assemblies - fasta files
-Example usage: snakemake -s assembly -j 10 --use-conda --rerun-incomplete --cluster-config cluster.json --cluster "sbatch -A {cluster.account} --mem {cluster.mem} -t {cluster.time} --cpus-per-task {cluster.cpus}" &
-Ouput: CheckM files, ANI, and txt file of samples passing all filters 
+Date Updated: 1/4/2022
+Purpose: Quality control
 """
+import os
+import subprocess
+import math
+import distutils.util
 
-(reads,) = glob_wildcards("resources/fasta/{file}/contigs.fa")
 
+OUT = config['out']
+FASTA = config['fasta']
+REFERENCE = config['ref']
+PARAMS = config['params']
+SAMPLES_OUT = os.path.join(OUT, 'Quality/sample_list.txt')
+(READS,) = glob_wildcards(os.path.join(FASTA,"{file}/contigs.fa"))
+
+with open(PARAMS, 'r') as fh:   
+    fl = [x.strip().split() for x in fh.readlines()]
+param_dict = {x[0]: x[1] for x in fl}
 
 # Output
 rule all:
     input:
-        "results/Quality/sample_list.txt",
+        SAMPLES_OUT,
 
 
 # Remove contigs smaller than 500 bp
 # 30 sec per file
 rule contig_filter:
     input:
-        assembly="resources/fasta/{file}/contigs.fa",
+        assembly=os.path.join(FASTA,"{file}/contigs.fa"),
     params:
         contig=500,
     conda:
-        "../envs/quality.yml"
+        "envs/quality.yml"
     log:
         "workflow/report/prokka_filter_{file}.log",
     output:
-        fna="results/Assembly/{file}/{file}.fna",
+        fna=os.path.join(OUT,"Assembly_filter/{file}/{file}.fna",
     shell:
         "reformat.sh in={input.assembly} out={output} minlength={params.contig} &> {log}"
 
@@ -38,33 +46,31 @@ rule contig_filter:
 # 5 minutes per sample
 rule run_checkm:
     input:
-        file="results/Assembly/{file}/{file}.fna",
-        binset="results/Assembly/{file}",
+        file=os.path.join(OUT,"Assembly_filter/{file}/{file}.fna"),
+        binset=os.path.join(OUT,"Assembly_filter/{file}"),
     params:
         threads=40,
-        prefix="results/Quality/Checkm/{file}",
+        prefix=os.path.join(OUT,"Quality/Checkm/{file}"),
     output:
-        stats="results/Quality/Checkm/{file}/storage/bin_stats.analyze.tsv",
+        stats=os.path.join(OUT,"Quality/Checkm/{file}/storage/bin_stats.analyze.tsv"),
     conda:
-        "../envs/quality.yml"
+        "envs/quality.yml"
     log:
-        log="results/Quality/Checkm/{file}/lineage.log",
+        log=os.path.join(OUT,"Quality/Checkm/{file}/lineage.log"),
     shell:
         "checkm lineage_wf -t 20 -x fna {input.binset} {params.prefix} &> {log}"
 
 
 rule checkm_to_graph:
     input:
-        stats=expand(
-            "results/Quality/Checkm/{file}/storage/bin_stats.analyze.tsv", file=reads
-        ),
+        stats=expand(os.path.join(OUT,"Quality/Checkm/{file}/storage/bin_stats.analyze.tsv"), file=READS),
     params:
-        log=expand("results/Quality/Checkm/{file}/lineage.log", file=reads),
+        log=expand(os.path.join(OUT,"Quality/Checkm/{file}/lineage.log"), file=READS),
     output:
-        png="results/Quality/checkm_log.txt",
-        stats="results/Quality/checkm_stats.txt",
+        png=os.path.join(OUT,"Quality/checkm_log.txt"),
+        stats=os.path.join(OUT,"/Quality/checkm_stats.txt"),
     conda:
-        "../envs/quality.yml"
+        "envs/quality.yml"
     log:
         "workflow/report/checkm_graph.log",
     shell:
@@ -76,11 +82,11 @@ rule checkm_to_graph:
 
 rule fastani_list_create:
     input:
-        fasta=expand("results/Assembly/{file}/{file}.fna", file=reads),
+        fasta=expand("results/Assembly/{file}/{file}.fna"), file=READS),
     params:
-        ref=config["reference_fna"],
+        ref=REFERENCE,
     output:
-        "results/Quality/fastani_list.txt",
+        os.path.join(OUT,"Quality/fastani_list.txt"),
     log:
         "workflow/report/fastani_list_create.log",
     shell:
@@ -92,11 +98,11 @@ rule fastani_list_create:
 
 rule fastani:
     input:
-        "results/Quality/fastani_list.txt",
+        os.path.join(OUT,"Quality/fastani_list.txt"),
     output:
-        "results/Quality/matrix.txt",
+        os.path.join(OUT,"Quality/matrix.txt"),
     conda:
-        "../envs/quality.yml"
+        "envs/quality.yml"
     log:
         "workflow/report/fastani.log",
     shell:
@@ -105,9 +111,9 @@ rule fastani:
 
 rule fastani_long_to_wide:
     input:
-        "results/Quality/matrix.txt",
+        os.path.join(OUT,"Quality/matrix.txt"),
     output:
-        txt="results/Quality/matrix_wide.txt",
+        txt=os.path.join(OUT,"Quality/matrix_wide.txt"),
     log:
         "workflow/report/fastani_long_to_wide.log",
     shell:
@@ -117,20 +123,18 @@ rule fastani_long_to_wide:
 # Filter files based off user-defined rules
 rule filter_files:
     input:
-        ani="results/Quality/matrix_wide.txt",
-        stat="results/Quality/checkm_stats.txt",
+        ani=os.path.join(OUT,"Quality/matrix_wide.txt"),
+        stat=os.path.join(OUT,"Quality/checkm_stats.txt"),
     params:
-        checkm="results/Quality/checkm_log.txt",
-        ref=config["ref"],
-        gc=config["gc"],
-        genome_size=config["genome_size"],
+        checkm=os.path.join(OUT,"Quality/checkm_log.txt"),
+        ref=REFERENCE,
+        gc=param_dict["gc"],
+        genome_size=param_dict["genome_size"],
     log:
         "workflow/report/filter_files.log",
     output:
-        "results/Quality/sample_list.txt",
+        os.path.join(OUT,"Quality/sample_list.txt"),
     shell:
         """
         python workflow/scripts/filter_isolates.py -o {output} -a {input.ani} -l {params.checkm} -s {input.stat} -r {params.ref} -gc {params.gc} -g {params.genome_size} &> {log}
-        chmod u+x workflow/scripts/copy_files.sh
-        workflow/scripts/copy_files.sh
         """

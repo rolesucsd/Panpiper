@@ -50,6 +50,7 @@ def cli():
     # Optional
     apo = ap.add_argument_group('optional arguments')
     apo.add_argument("-h", "--help", action="help", help="show this help message and exit")
+    apo.add_argument("-j", "--jobs", help="Number of jobs to run at a time", default="1", type=str)
     apo.add_argument('--max_cores', help='Maximum number of cores [%(default)s]', default=40, type=int)
     apo.add_argument('--max_mem', help='Maximum memory in GB [%(default)s]', default=180, type=int)
     apo.add_argument('--log_lvl', help='Logging level [%(default)s].', default='INFO', type=str, choices=['DEBUG','INFO','WARNING','ERROR'])
@@ -62,6 +63,7 @@ def cli():
     app = ap.add_argument_group('parameters')
     app.add_argument('--gc', help='GC content of species of interest', default=43.19, type=float)
     app.add_argument('--genome_size', help='Genome size of species of interest', default = 5205140, type=int)
+    app.add_argument('--ref', help='Name of reference', default = "9343", type=str)
 
     ########## Workflow ##########
     master = Controller(ap)

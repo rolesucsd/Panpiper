@@ -1,39 +1,46 @@
 """
 Authors: Renee Oles
-Date Updated: 11/1/22
-Purpose: Mgwas snakemake
-Config file: 
-    fasta_path - path to fasta files
-    fastq_path - path to fastq files
-    reference - path to reference file in gbk format
-Input: 
-Example usage: nohup snakemake -s mgwas.smk -j 20 --use-conda --cluster-config cluster.json --cluster "sbatch -A {cluster.account} --mem {cluster.mem} -t {cluster.time} --cpus-per-task {cluster.cpus}" &
-Output:         
+Date Updated: 1/4/2022
+Purpose: Quality control
 """
-
-# find . -type f -name "*_genomic.fna" -printf "/%P\n" | while read FILE ; do DIR=$(dirname "$FILE" );\
-# mv ."$FILE" ."$DIR""$DIR".fna;
-# done
-
-(filtered,) = glob_wildcards("resources/fasta/{file}.fna")
+import os
+import subprocess
+import math
+import distutils.util
 
 
+OUT = config['out']
+FASTA = config['fasta']
+SAMPLE_LIST = config['sample_list']
+PARAMS = config['params']
+
+with open(PARAMS, 'r') as fh:   
+    fl = [x.strip().split() for x in fh.readlines()]
+param_dict = {x[0]: x[1] for x in fl}
+
+def read_filtered_files():
+    with open(SAMPLE_LIST) as f:
+        raw_reads = [sample for sample in f.read().split('\n') if len(sample) > 0]
+        return(raw_reads)
+filtered = read_filtered_files()
+
+# Output
 rule all:
     input:
-        "results/Pangenome/AMR.txt",
-        "results/Pangenome/Panaroo/pan_genome_reference.fna",
-        "results/Pangenome/Panaroo/pan_genome_reference.bwt",
-        "results/Pangenome/Phylogroups/db/db_clusters.csv",
-        expand("results/Pangenome/Prokka/{file}/{file}.gff", file=filtered),
+        os.path.join(OUT,"Pangenome/AMR.txt"),
+        os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fna"),
+        os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.bwt"),
+        os.path.join(OUT,"Pangenome/Phylogroups/db/db_clusters.csv"),
+        expand(os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.gff"), file=filtered),
 
 
 rule setup:
     input:
-        "results/Quality/sample_list.txt",
+        SAMPLE_LIST,
     output:
-        "results/Pangenome/Unitig/unitig.list",
-        "results/Pangenome/Fsm-lite/fsm-lite.list",
-        "results/Pangenome/Phylogroups/poppunk.list",
+        os.path.join(OUT,"Pangenome/Unitig/unitig.list"),
+        os.path.join(OUT,"Pangenome/Fsm-lite/fsm-lite.list"),
+        os.path.join(OUT,"Pangenome/Phylogroups/poppunk.list"),
     shell:
         """
         chmod u+x scripts/setup.sh
@@ -44,18 +51,18 @@ rule setup:
 # Time requirement: between 5 and 10 minutes
 rule prokka_multiple:
     input:
-        gen="results/Assembly/{file}/{file}.fna",
+        gen=os.path.join(FASTA,"{file}/{file}.fna"),
     params:
         name="{file}",
-        outdir="results/Pangenome/Prokka/{file}",
+        outdir=os.path.join(OUT,"Pangenome/Prokka/{file}"),
     conda:
         "../envs/pangenome.yml"
     log:
         "log/prokka_{file}.log",
     output:
-        gen="results/Pangenome/Prokka/{file}/{file}.gff",
-        faa="results/Pangenome/Prokka/{file}/{file}.faa",
-        fna="results/Pangenome/Prokka/{file}/{file}.fna",
+        gen=os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.gff"),
+        faa=os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.faa"),
+        fna=os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.fna"),
     shell:
         "prokka --mincontiglen 500 --centre X --compliant --kingdom Bacteria --outdir {params.outdir} --prefix {params.name} --locustag {params.name} --force {input} --addgenes &> {log}"
 
@@ -63,46 +70,46 @@ rule prokka_multiple:
 # 1 hour for 100 samples, scales linearlly
 rule panaroo:
     input:
-        gen=expand("results/Pangenome/Prokka/{file}/{file}.gff", file=filtered),
+        gen=expand(os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.gff"), file=filtered),
     params:
-        "results/Pangenome/Panaroo",
+        os.path.join(OUT,"Pangenome/Panaroo",
     log:
         "log/panaroo.log",
     output:
-        "results/Pangenome/Panaroo/pan_genome_reference.fa",
-        "results/Pangenome/Panaroo/core_gene_alignment.aln",
+        os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
+        os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
     shell:
         "panaroo -i {input} -o {params} --remove-invalid-genes --clean-mode strict -a core --core_threshold 0.98 --len_dif_percent 0.98 -f 0.7 --merge_paralogs -t 20 &> {log}"
 
 
 rule prokka_pan:
     input:
-        gen="results/Pangenome/Panaroo/pan_genome_reference.fa",
+        gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
     params:
         name="pan_genome_reference",
-        outdir="results/Pangenome/Panaroo/",
+        outdir=os.path.join(OUT,"Pangenome/Panaroo/"),
     conda:
         "../envs/pangenome.yml"
     log:
         "log/prokka_pan.log",
     output:
-        gen="results/Pangenome/Panaroo/pan_genome_reference.gff",
-        faa="results/Pangenome/Panaroo/pan_genome_reference.faa",
-        fna="results/Pangenome/Panaroo/pan_genome_reference.fna",
+        gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.gff"),
+        faa=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.faa"),
+        fna=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fna"),
     shell:
         "prokka --mincontiglen 500 --centre X --compliant --kingdom Bacteria --outdir {params.outdir} --prefix {params.name} --locustag {params.name} --force {input} --addgenes &> {log}"
 
 
 rule bwa_index_pan:
     input:
-        "results/Pangenome/Panaroo/pan_genome_reference.fa",
+        os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
     params:
-        one="results/Pangenome/Panaroo/pan_genome_reference",
-        inte="results/Pangenome/Panaroo/pan_genome_reference.fa.bwt",
+        one=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference"),
+        inte=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa.bwt"),
     conda:
         "../envs/pangenome.yml"
     output:
-        "results/Pangenome/Panaroo/pan_genome_reference.bwt",
+        os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.bwt"),
     shell:
         """
         bwa index -a bwtsw {input} {params.one}
@@ -112,23 +119,23 @@ rule bwa_index_pan:
 
 rule fasttree:
     input:
-        "results/Pangenome/Panaroo/core_gene_alignment.aln",
+        os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
     conda:
         "../envs/pangenome.yml"
     output:
-        "results/Pangenome/Phylogeny/fasttree.nwk",
+        os.path.join(OUT,"Pangenome/Phylogeny/fasttree.nwk"),
     shell:
         "FastTree -gtr -nt -gamma -seed 12345 {input} > {output}"
 
 
 rule raxml:
     input:
-        tre="results/Pangenome/Phylogeny/fasttree.nwk",
-        aln="results/Pangenome/Panaroo/core_gene_alignment.aln",
+        tre=os.path.join(OUT,"Pangenome/Phylogeny/fasttree.nwk"),
+        aln=os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
     params:
-        outdir="results/Pangenome/Phylogeny",
+        outdir=os.path.join(OUT,"Pangenome/Phylogeny"),
     output:
-        "results/Pangenome/Phylogeny/RAxML_result.tree2",
+        os.path.join(OUT,"Pangenome/Phylogeny/RAxML_result.tree2"),
     shell:
         "./standard-RAxML/raxmlHPC-AVX2 -m GTRCAT -F -f D -s {input.aln} -t {input.tre} -n tree2 -p 12345 -w {params.outdir}"
 
@@ -139,37 +146,37 @@ rule raxml:
 
 rule iqtree:
     input:
-        aln="results/Pangenome/Panaroo/core_gene_alignment.aln",
-        tre="results/Pangenome/Phylogeny/RAxML_result.tree2",
+        aln=os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
+        tre=os.path.join(OUT,"Pangenome/Phylogeny/RAxML_result.tree2"),
     conda:
         "../envs/pangenome.yml"
     log:
         "log/iqtree.log",
     output:
-        "results/Pangenome/Panaroo/core_gene_alignment.aln.iqtree",
+        os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln.iqtree"),
     shell:
         "iqtree -m GTR+I+G -nt AUTO -s {input.aln} -te {input.tre}"
 
 
 rule amrfinder:
     input:
-        fasta="results/Pangenome/Prokka/{file}/{file}.faa",
-        gff="results/Pangenome/Prokka/{file}/{file}.gff",
+        fasta=os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.faa"),
+        gff=os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.gff"),
     params:
-        mut="results/Pangenome/AMR/report_mut.txt",
+        mut=os.path.join(OUT,"Pangenome/AMR/report_mut.txt"),
     conda:
         "../envs/pangenome.yml"
     output:
-        "results/Pangenome/AMR/{file}.txt",
+        os.path.join(OUT,"Pangenome/AMR/{file}.txt"),
     shell:
         "amrfinder -d /home/roles/anaconda3/../envs/amrfinder/share/amrfinderplus/data/2022-05-26.1 -p {input.fasta} --plus --threads 20 --mutation_all {params.mut} -o {output}"
 
 
 rule concat_amr:
     input:
-        expand("results/Pangenome/AMR/{file}.txt", file=filtered),
+        expand(os.path.join(OUT,"Pangenome/AMR/{file}.txt"), file=filtered),
     output:
-        "results/Pangenome/AMR.txt",
+        os.path.join(OUT,"Pangenome/AMR.txt"),
     shell:
         "python scripts/concat_amrfinder.py {input}"
 
@@ -179,14 +186,14 @@ rule concat_amr:
 # Time: 30 minutes for 571 samples
 rule mash_fasta:
     input:
-        expand("results/Assembly/{file}/{file}.fna", file=filtered),
+        expand(os.path.join(OUT,"Assembly/{file}/{file}.fna"), file=filtered),
     params:
-        out="results/Pangenome/Mash/fasta",
-        pref="results/Assembly/Shovill/",
+        out=os.path.join(OUT,"Pangenome/Mash/fasta"),
+        pref=os.path.join(OUT,"Assembly/Shovill/"),
     conda:
         "../envs/pangenome.yml"
     output:
-        "results/Pangenome/Mash/fasta.tsv",
+        os.path.join(OUT,"Pangenome/Mash/fasta.tsv"),
     shell:
         """
         mash sketch -s 10000 -o {params.out} {input}
@@ -195,40 +202,40 @@ rule mash_fasta:
 
 rule poppunk_sketch:
     input:
-        "results/Pangenome/Phylogroups/poppunk.list",
+        os.path.join(OUT,"Pangenome/Phylogroups/poppunk.list"),
     params:
-        "results/Pangenome/Phylogroups/db",
+        os.path.join(OUT,"Pangenome/Phylogroups/db"),
     conda:
         "../envs/pangenome.yml"
     output:
-        "results/Pangenome/Phylogroups/db/db.dists.pkl",
+        os.path.join(OUT,"Pangenome/Phylogroups/db/db.dists.pkl"),
     shell:
         "poppunk --create-db --output {params} --r-files {input} --threads 20"
 
 
 rule poppunk_qc:
     input:
-        "results/Pangenome/Phylogroups/db/db.dists.pkl",
+        os.path.join(OUT,"Pangenome/Phylogroups/db/db.dists.pkl"),
     params:
-        db="results/Pangenome/Phylogroups/db",
-        ref=config["ref"],
+        db=os.path.join(OUT,"Pangenome/Phylogroups/db"),
+        ref=param_dict["ref"],
     conda:
         "../envs/pangenome.yml"
     output:
-        "results/Pangenome/Phylogroups/db/popunk.txt",
+        os.path.join(OUT,"Pangenome/Phylogroups/db/popunk.txt"),
     shell:
         "poppunk --qc-db --ref-db {params.db} --type-isolate {params.ref}"
 
 
 rule poppunk_fit:
     input:
-        "results/Pangenome/Phylogroups/db/db.dists.pkl",
+        os.path.join(OUT,"Pangenome/Phylogroups/db/db.dists.pkl"),
     params:
-        db="results/Pangenome/Phylogroups/db",
+        db=os.path.join(OUT,"Pangenome/Phylogroups/db"),
         model="lineage",
     conda:
         "../envs/pangenome.yml"
     output:
-        "results/Pangenome/Phylogroups/db/db_clusters.csv",
+        os.path.join(OUT,"Pangenome/Phylogroups/db/db_clusters.csv"),
     shell:
         "poppunk --fit-model {params.model} --ref-db {params.db} --K 4"
