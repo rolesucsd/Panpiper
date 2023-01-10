@@ -20,6 +20,7 @@ from argparse import RawTextHelpFormatter
 from controller import Controller
 from workflow import Workflow
 
+# token : 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
 
 # Snakefiles
 _ROOT = os.path.abspath(os.path.dirname(__file__))
