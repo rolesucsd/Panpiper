@@ -3,7 +3,7 @@ import logging
 import sys
 import pkg_resources
 import re
-import Path
+#import Path
 from Bio import SeqIO
 
 class Controller(object):
@@ -17,7 +17,7 @@ class Controller(object):
         
         # Logger
         logging.basicConfig(format='\033[36m'+'[%(asctime)s] %(levelname)s:'+'\033[0m'+' %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=self.log_lvl)
-        logging.info('Running Package version {}'.format(pkg_resources.require("package")[0].version))
+#        logging.info('Running Package version {}'.format(pkg_resources.require("package")[0].version))
 
         # Force consistency
         self.output = os.path.join(self.output, '')
@@ -41,17 +41,19 @@ class Controller(object):
         self.check_params()
         self.check_out()
         if not any([self.unlock, self.only_conda, self.snake is not None]):
-            if(self.fastq is not None):
+            if(self.fastq is not "skip"):
                 self.check_fastq()
-            if(self.reference is not None):
-                if(self.fasta is not None):
+            elif(self.reference is not "skip"):
+                if(self.fasta is not "skip"):
                     self.check_reference()
+                    self.fasta()
                 else:
                     logging.error('Must provide a fasta directory with sample list')
                     sys.exit()
-            if(self.sample_list is not None):
-                if(self.fasta is not None):
+            elif(self.sample_list is not "skip"):
+                if(self.fasta is not "skip"):
                     self.check_sample()
+                    self.fasta()
                 else:
                     logging.error('Must provide a fasta directory with sample list')
                     sys.exit()
@@ -66,8 +68,8 @@ class Controller(object):
         Return error if parameters are not allowed
         TODO: Add my parameters of interest to this file
         '''
-        if self.min_af < 0.5:
-            logging.error('min_af lower than 0.5 can lead to unexpected results')
+        if self.gc < 20:
+            logging.error('GC content is typically above 20')
             sys.exit()
 
 
@@ -80,41 +82,36 @@ class Controller(object):
         except FileExistsError:
             logging.warning('Output directory '+self.output+' already exists')
 
-    def check_reference(self):
+    def check_fastq(self):
         '''
         Check the fastq input directory
         '''
         logging.debug('Checking input directory for fastq files')
-        cwd = self.fastq.cwd()
-        try: 
-            for fname in cwd.glob("*.fastq"):
-                print('Fastq files found')
-        except Exception:
-            logging.error('No fastq files found in directory')
-            sys.exit()
-
-        # Extract info
-        self.fastq_list = set(= [x for x in os.listdir(cwd) if x.endswith(".fastq")])
+        for file in os.listdir(self.fastq):
+            if file.endswith(".fastq"):
+                logging.debug('Fastq files found')
+                return()
         
+        logging.error('No fastq files found in directory')
+        sys.exit()        
 
     def check_fasta(self):
         '''
         Check the fasta input directory
-        Check the fasta referenc efile
         '''
         logging.debug('Checking input directory for fasta files')
-        cwd = self.fastq.cwd()
-        try: 
-            for fname in cwd.glob("*.fasta"):
-                print('Fasta files found')
-        except Exception:
-            logging.error('No fasta files found in directory')
-            sys.exit()
-
-        # Extract info
-        self.fasta_list = set(= [x for x in os.listdir(cwd) if x.endswith(".fasta")])
+        for file in os.listdir(self.fasta):
+            if file.endswith(".fasta"):
+                logging.debug('Fasta files found')
+                return()
         
+        logging.error('No fasta files found in directory')
+        sys.exit()        
 
+    def check_reference(self):
+        '''
+        Check the fasta reference file
+        '''
         logging.debug('Checking reference fasta file')
 
         try: 
@@ -137,8 +134,11 @@ class Controller(object):
         with open(self.sample_list, 'r') as fh:
             for line in fh:
                 if os.path.join(self.fasta, line, ".fasta"):
+                    print('Fasta file found')
                 elif os.path.join(self.fasta, line, ".fna"):
+                    print('Fasta file found')
                 elif os.path.join(self.fasta, line, ".fa"):
+                    print('Fasta file found')
                 else:
                     logging.error('Sample names not present in fasta directory')
                     sys.exit()

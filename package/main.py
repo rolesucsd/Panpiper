@@ -5,13 +5,21 @@ import logging
 import os
 import sys
 import pkg_resources
+# Delete after package creation
+import importlib
 
 from os.path import join, dirname, basename
 from shutil import copyfile
 from argparse import RawTextHelpFormatter
 
-from package.controller import Controller
-from package.workflow import Workflow
+# Add back after package creation
+#from package.controller import Controller
+#from package.workflow import Workflow
+
+# Delete after package creation
+from controller import Controller
+from workflow import Workflow
+
 
 # Snakefiles
 _ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -22,7 +30,8 @@ WORKFLOW_PANGENOME = os.path.join(_ROOT, 'workflow', 'pangenome.smk')
 def cli():
     
     ########## Arguments ##########
-    ap = argparse.ArgumentParser(description='Package version {}'.format(pkg_resources.require("package")[0].version), add_help=False, allow_abbrev=False, formatter_class=RawTextHelpFormatter)
+#    ap = argparse.ArgumentParser(description='Package version {}'.format(pkg_resources.require("package")[0].version), add_help=False, allow_abbrev=False, formatter_class=RawTextHelpFormatter)
+    ap = argparse.ArgumentParser(description='Package version ', add_help=False, allow_abbrev=False, formatter_class=RawTextHelpFormatter)
     
     # Required
     apr = ap.add_argument_group('main arguments')
@@ -30,7 +39,7 @@ def cli():
     apr.add_argument('-a', '--fasta', help='Path to fasta file directory', required=False, default="skip", type=str)
     apr.add_argument('-s', '--sample_list', help='Line delimited file of samples passing quality control', required=False, default="skip", type=str)
     apr.add_argument('-o', '--output', help='Prefix for output directory', required=True)
-    apr.add_argument('-r', '--reference', help='Reference fasta file, includes path', type=str, required=False, default="skip", type=str)
+    apr.add_argument('-r', '--reference', help='Reference fasta file, includes path', required=False, default="skip", type=str)
 
     # Cluster arguments
     apc = ap.add_argument_group('compute cluster arguments')
@@ -49,25 +58,10 @@ def cli():
     apo.add_argument('--unlock', help='Unlock snakemake directory in case of unexpected exists, then exit', action='store_true')
 
     # Parameters
-    # TODO Change parameters
+    ## Defaults set for Bacteroides fragilis
     app = ap.add_argument_group('parameters')
-    app.add_argument('--gc', help='Minimum bin size for inclusion [%(default)s].', default=200000, type=int)
-    app.add_argument('--genome_size', help='If set, bin clusters will not be aggregated to metagenomic species, but treated separately.', action='store_true')
-    app.add_argument('--annotation_prevalence', help='Minimum prevalence of taxonomic assignment in a cluster of bins to call consensus [%(default)s]', default=0.75, type=float)
-    app.add_argument('--clustering_coverage', help='Alignment coverage for clustering of genes with MMseqs2 [%(default)s]', default=0.95, type=float)
-    app.add_argument('--clustering_min_seq_id', help='Sequence identity threshold for clustering of genes with MMseqs2 [%(default)s]', default=0.95, type=float)
-    app.add_argument('--clustering_type', help='Sequence type for gene clustering with MMseqs2. Nucleotide- or protein-level [%(default)s]', default='protein', type=str, choices=['nucleotide', 'protein'])
-    app.add_argument('--min_gtdb_markers', help='Minimum GTDBtk marker genes shared between MGS and outgroup for rooting trees [%(default)s]', default=10, type=int)
-    app.add_argument('--marker_gene_cluster_prevalence', help='Minimum prevalence of marker genes to be selected for rooting of MGS trees [%(default)s]', default=0.5, type=float)
-    app.add_argument('--min_af', help='Minimim allele frequency for calling a base when creating phylogenies [%(default)s]', default=0.8, type=float)
-    app.add_argument('--min_depth', help='Minimim read depth for calling a base when creating phylogenies [%(default)s]', default=2, type=int)
-    app.add_argument('--min_nonN', help='Minimum fraction of non-N characters of a sample to be included in a phylogeny [%(default)s]', default=0.5, type=float)
-    app.add_argument('--min_marker_genes', help='Minimum marker genes to be detected for inclusion of a sample in a phylogeny [%(default)s]', default=2, type=int)
-    app.add_argument('--min_signature_genes', help='Minimum signature genes to be detected for inclusion of a sample in a phylogeny [%(default)s]', default=50, type=int)
-    app.add_argument('--phylo', help='Software for phylogeny inference. Either fast (fasttree) or slow and more accurate (iqtree) [%(default)s]', default='fasttree', type=str, choices=['fasttree', 'iqtree'])
-    app.add_argument('--tax_scope_threshold', help='Threshold for assigning the taxonomic scope of a gene cluster [%(default)s]', default=0.9, type=float)
-    app.add_argument('--synteny_adj_cutoff', help='Minimum number of times gene clusters should be adjacent to be included in synteny graph [%(default)s]', default=1, type=int)
-    app.add_argument('--synteny_mcl_inflation', help='Inflation parameter for mcl clustering of synteny graph. Usually between 1.2 and 5. Higher values produce smaller clusters [%(default)s]', default=5, type=float)
+    app.add_argument('--gc', help='GC content of species of interest', default=43.19, type=float)
+    app.add_argument('--genome_size', help='Genome size of species of interest', default = 5205140, type=int)
 
     ########## Workflow ##########
     master = Controller(ap)

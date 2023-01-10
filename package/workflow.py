@@ -6,7 +6,7 @@ import subprocess
 import logging
 import glob
 
-from maginator.messages import Message
+#from maginator.messages import Message
 
 class Workflow(object):
 
@@ -26,7 +26,7 @@ class Workflow(object):
     def run(self, snakefile):
 
         # Start message instance
-        messages = Message(self)
+#        messages = Message(self)
 
         # Define core snakemake command
         cmd = ['snakemake',
