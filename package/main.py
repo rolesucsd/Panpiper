@@ -41,11 +41,13 @@ def cli():
     apr.add_argument('-s', '--sample_list', help='Line delimited file of samples passing quality control', required=False, default="skip", type=str)
     apr.add_argument('-o', '--output', help='Prefix for output directory', required=True)
     apr.add_argument('-r', '--reference', help='Reference fasta file, includes path', required=False, default="skip", type=str)
+    apr.add_argument('-w', '--workflow', help='Choose which workflow to run [%(default)s]', default='assembly', type=str, choices=['assembly','quality','pangenome'])
 
     # Cluster arguments
     apc = ap.add_argument_group('compute cluster arguments')
-    apc.add_argument('--cluster', help='Cluster compute structure [%(default)s]', default=None, type=str, choices=[None,'qsub','slurm','drmaa'])
-    apc.add_argument('--cluster_info', help='Cluster scheduler arguments when submitting cluster jobs.\nHas to contain the following special strings:\n{memory}, {cores}, and {runtime}.\nThese special strings will be substituted by maginator to indicate resources for each job.\n{memory} is substituted for the memory in GB.\n{runtime} is substituted with the time in the following format: DD:HH:MM:SS.\nCan also contain user names, groups, etc. required by the cluster scheduler', default=None, type=str)
+    apc.add_argument('--cluster_type', help='Cluster compute structure [%(default)s]', default=None, type=str, choices=[None,'qsub','slurm'])
+    apc.add_argument('--cluster_config', help='Cluster json file [%(default)s]', default=None, type=str)
+    apc.add_argument('--cluster_args', help='Cluster scheduler arguments when submitting cluster jobs.\nFollow the format: "sbatch -A {cluster.account} --mem {cluster.mem} -t {cluster.time} --cpus-per-task {cluster.cpus}"', default=None, type=str)
     apc.add_argument('--max_jobs', help='Maximum number of cluster jobs [%(default)s]', default=50, type=int)
     
     # Optional
@@ -75,20 +77,21 @@ def cli():
     if master.snake:
         logging.info('Only running '+master.snake+' snakefile')
         wf.run(snakefile=globals()['WORKFLOW_'+master.snake])
-    # If fasta directory is not present
-    elif master.fastq:
+
+    # If workflow is set to Assembly
+    elif (master.workflow  == "assembly"):
         # Assembly 
         logging.info('Assemble fastq')
         wf.run(snakefile=WORKFLOW_ASSEMBLY)
 
-    # If reference is present
-    elif master.reference: 
+    # If workflow is set to Quality
+    elif (master.workflow == "quality"):
         # Quality control
         logging.info('Run quality control for assembly quality and taxonomy verification')
         wf.run(snakefile=WORKFLOW_QUALITY)
     
-    elif master.sample_list:
-        # Pangenomics
+    # If workflow is set to Pangenome
+    elif (master.workflow  == "pangenome"):
         logging.info('Run pangenome creation and analysis')
         wf.run(snakefile=WORKFLOW_PANGENOME)
 

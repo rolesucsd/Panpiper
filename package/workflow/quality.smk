@@ -13,12 +13,18 @@ OUT = config['out']
 FASTA = config['fasta']
 REFERENCE = config['ref']
 PARAMS = config['params']
+SAMPLE_LIST = config['list']
 SAMPLES_OUT = os.path.join(OUT, 'Quality/sample_list.txt')
-(READS,) = glob_wildcards(os.path.join(FASTA,"{file}/contigs.fa"))
 
 with open(PARAMS, 'r') as fh:   
     fl = [x.strip().split() for x in fh.readlines()]
 param_dict = {x[0]: x[1] for x in fl}
+
+def read_complete_files():
+    with open(SAMPLE_LIST) as f:
+        raw_reads = [sample for sample in f.read().split('\n') if len(sample) > 0]
+        return(raw_reads)
+READS = read_complete_files()
 
 # Output
 rule all:
@@ -38,7 +44,7 @@ rule contig_filter:
     log:
         "workflow/report/prokka_filter_{file}.log",
     output:
-        fna=os.path.join(OUT,"Assembly_filter/{file}/{file}.fna",
+        fna=os.path.join(OUT,"Assembly_filter/{file}/{file}.fna"),
     shell:
         "reformat.sh in={input.assembly} out={output} minlength={params.contig} &> {log}"
 
@@ -47,9 +53,9 @@ rule contig_filter:
 rule run_checkm:
     input:
         file=os.path.join(OUT,"Assembly_filter/{file}/{file}.fna"),
-        binset=os.path.join(OUT,"Assembly_filter/{file}"),
     params:
         threads=40,
+        binset=os.path.join(OUT,"Assembly_filter/{file}"),
         prefix=os.path.join(OUT,"Quality/Checkm/{file}"),
     output:
         stats=os.path.join(OUT,"Quality/Checkm/{file}/storage/bin_stats.analyze.tsv"),
@@ -58,7 +64,7 @@ rule run_checkm:
     log:
         log=os.path.join(OUT,"Quality/Checkm/{file}/lineage.log"),
     shell:
-        "checkm lineage_wf -t 20 -x fna {input.binset} {params.prefix} &> {log}"
+        "checkm lineage_wf -t 20 -x fna {params.binset} {params.prefix} &> {log}"
 
 
 rule checkm_to_graph:
@@ -68,7 +74,7 @@ rule checkm_to_graph:
         log=expand(os.path.join(OUT,"Quality/Checkm/{file}/lineage.log"), file=READS),
     output:
         png=os.path.join(OUT,"Quality/checkm_log.txt"),
-        stats=os.path.join(OUT,"/Quality/checkm_stats.txt"),
+        stats=os.path.join(OUT,"Quality/checkm_stats.txt"),
     conda:
         "envs/quality.yml"
     log:
@@ -82,7 +88,7 @@ rule checkm_to_graph:
 
 rule fastani_list_create:
     input:
-        fasta=expand("results/Assembly/{file}/{file}.fna"), file=READS),
+        fasta=expand(os.path.join(OUT,"Assembly_filter/{file}/{file}.fna"), file=READS),
     params:
         ref=REFERENCE,
     output:

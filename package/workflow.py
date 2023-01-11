@@ -6,34 +6,25 @@ import subprocess
 import logging
 import glob
 
-#from maginator.messages import Message
+from messages import Message
 
 class Workflow(object):
 
     def __init__(self, obj):
         for key, val in vars(obj).items():
             setattr(self, key, val)
-        
-    def add_info(self, x):
-        
-        # Substitute resource information
-        x = re.sub('{cores}', '{resources.cores}', x)
-        x = re.sub('{memory}', '{resources.memory}', x)
-        x = re.sub('{runtime}', '{resources.runtime}', x)
-   
-        return x
 
     def run(self, snakefile):
 
         # Start message instance
-#        messages = Message(self)
+        messages = Message(self)
 
         # Define core snakemake command
+        # need to edit j
         cmd = ['snakemake',
                '--use-conda',
                '--latency-wait', '20',
                '-s', snakefile,
-               '-j', '1',
                '--config',
                'out='+self.output,
                'fastq='+self.fastq,
@@ -43,16 +34,16 @@ class Workflow(object):
                'params='+self.params]
         
         # If run on server
-        if self.cluster == None:
+        if self.cluster_config == None:
             cmd += ['--cores', str(self.max_cores)]
 
         # If run on a cluster
         else:
             
             # Make logging dirs
-            if self.cluster in ('qsub', 'slurm'):
-
+            if self.cluster_type in ('qsub', 'slurm'):
                 try:
+                    os.mkdir(self.output + 'report')
                     os.mkdir(self.output + 'report/cluster_err')
                 except FileExistsError:
                     pass
@@ -70,32 +61,22 @@ class Workflow(object):
             cmd += ['--jobs', str(self.max_jobs),
                     '--local-cores', str(self.max_cores)]
                 
-        if self.cluster == 'qsub':
+        if self.cluster_type == 'qsub':
             
-            cluster_cmd = 'qsub' + ' ' + self.cluster_info
-            cluster_cmd = cluster_cmd + ' -e ' + self.output + 'report/cluster_err' + ' -o ' + self.output + 'report/cluster_out'
-            cluster_cmd = self.add_info(cluster_cmd)
-
+            cluster_cmd = '--cluster-config' + ' ' + self.cluster_config
+#            cluster_cmd = cluster_cmd + ' -e ' + self.output + 'report/cluster_err' + ' -o ' + self.output + 'report/cluster_out'
+            cluster_cmd = cluster_cmd + ' --cluster ' + '"' + self.cluster_args + '"'
             # Final snakemake command
-            cmd += ['--cluster', cluster_cmd]
+            cmd += [cluster_cmd]
 
-        if self.cluster == 'slurm':
+        if self.cluster_type == 'slurm':
             
-            cluster_cmd = 'sbatch' + ' ' + self.cluster_info
-            cluster_cmd = cluster_cmd + ' -e ' + self.output + 'report/cluster_err' + ' -o ' + self.output + 'report/cluster_out'
-            cluster_cmd = self.add_info(cluster_cmd)
-            
+            cluster_cmd = '--cluster-config' + ' ' + self.cluster_config
+#            cluster_cmd = cluster_cmd + ' -e ' + self.output + 'report/cluster_err' + ' -o ' + self.output + 'report/cluster_out'
+            cluster_cmd = cluster_cmd + ' --cluster ' + '"' + self.cluster_args + '"'
             # Final snakemake command
-            cmd += ['--cluster', cluster_cmd]
+            cmd += [cluster_cmd]
 
-        if self.cluster == 'drmaa':
-            
-            cluster_cmd = self.add_info(cluster_cmd)
-            
-            # Final snakemake command
-            cmd += ['--cluster', cluster_cmd,
-                    '--drmaa-log-dir', self.output+'report/drmaa']
-        
         # Only install conda envs if only_conda
         if self.only_conda:
             logging.info('Only creating conda environments.')

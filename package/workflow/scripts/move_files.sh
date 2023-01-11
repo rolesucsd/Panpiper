@@ -1,10 +1,25 @@
 #!/bin/bash
 
-for i in $1
+if [ -f $1/complete_assembly_files.txt ]; then
+	rm $1/complete_assembly_files.txt
+	touch $1/complete_assembly_files.txt
+else
+	touch $1/complete_assembly_files.txt
+fi
+
+if [ -f $1/incomplete_assembly_files.txt ]; then
+	rm $1/incomplete_assembly_files.txt
+	touch $1/incomplete_assembly_files.txt
+else
+	touch $1/incomplete_assembly_files.txt
+fi
+
+CONTIGS="contigs.fa"
+for d in $1/*/
 do
-	if [ -s $1$i/contigs.fa ]; then
-		mv $1$i/contigs.fa $1complete/$i
+	if [ -s $d$CONTIGS ]; then
+		echo "$(basename -- $d)" >> $1/complete_assembly_files.txt
+	else
+		echo "$(basename -- $d)" >> $1/incomplete_assembly_files.txt
 	fi
 done
-
-ls $1complete/* > $1complete_assembly_files.txt

@@ -12,7 +12,7 @@ import distutils.util
 OUT = config['out']
 FASTQ = config['fastq']
 PARAMS = config['params']
-ASSEMBLY_OUT = os.path.join(OUT, 'fasta_files.txt')
+ASSEMBLY_OUT = os.path.join(OUT, 'complete_assembly_files.txt')
 (READS,) = glob_wildcards(os.path.join(FASTQ,"{file}_2.fastq"))
 
 with open(PARAMS, 'r') as fh:   

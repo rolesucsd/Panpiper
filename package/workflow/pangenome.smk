@@ -11,7 +11,7 @@ import distutils.util
 
 OUT = config['out']
 FASTA = config['fasta']
-SAMPLE_LIST = config['sample_list']
+SAMPLE_LIST = config['list']
 PARAMS = config['params']
 
 with open(PARAMS, 'r') as fh:   

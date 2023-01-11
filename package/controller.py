@@ -23,43 +23,34 @@ class Controller(object):
         self.output = os.path.join(self.output, '')
 
         # Check cluster info input
-        if self.cluster is not None:
-            if self.cluster_info is not None:
-                if len(re.findall('{cores}|{memory}|{runtime}', self.cluster_info)) != 3 or len(re.findall('{.*?}', self.cluster_info)) != 3: 
-                    logging.error('cluster_info has to contain the following special strings: {cores}, {memory}, and {runtime}')
+        if self.cluster_type is not None:
+            if self.cluster_args is not None:
+                if len(re.findall('{cluster.mem}|{cluster.time}|{cluster.cpus}', self.cluster_args)) != 3: 
+                    logging.error('cluster_args has to contain the following special strings: {cluster.cpus}, {cluster.mem}, and {cluster.time}')
                     sys.exit()
-                else:
-                    tmp_info = re.sub('{cores}|{memory}|{runtime}','',self.cluster_info)
-                    if not bool(re.match('^[a-zA-Z0-9-_ =:,.]+$', tmp_info)):
-                        logging.error('Invalid characters in cluster_info')
-                        sys.exit()
             else:
-                logging.error('cluster_info is required when running on a compute cluster')
+                logging.error('cluster_args is required when running on a compute cluster')
                 sys.exit()
 
         # Check input and output
         self.check_params()
         self.check_out()
         if not any([self.unlock, self.only_conda, self.snake is not None]):
-            if(self.fastq is not "skip"):
+            if(self.workflow is "assembly"):
                 self.check_fastq()
-            elif(self.reference is not "skip"):
-                if(self.fasta is not "skip"):
+            elif(self.workflow is "quality"):
+                try:
                     self.check_reference()
-                    self.fasta()
-                else:
-                    logging.error('Must provide a fasta directory with sample list')
-                    sys.exit()
-            elif(self.sample_list is not "skip"):
-                if(self.fasta is not "skip"):
                     self.check_sample()
-                    self.fasta()
-                else:
-                    logging.error('Must provide a fasta directory with sample list')
+                except Exception:
+                    logging.error('Must provide reference file and sample list')                    
                     sys.exit()
-            else:
-                logging.error('Must provide either a fastq directory, reference and fasta directory, or sample list and fasta directory')
-                sys.exit()
+            elif(self.workflow is "pangenome"):
+                try:
+                    self.check_sample()
+                except Exception:
+                    logging.error('Must provide a sample list')
+                    sys.exit()
 
         self.write_params(args)
 
@@ -95,18 +86,6 @@ class Controller(object):
         logging.error('No fastq files found in directory')
         sys.exit()        
 
-    def check_fasta(self):
-        '''
-        Check the fasta input directory
-        '''
-        logging.debug('Checking input directory for fasta files')
-        for file in os.listdir(self.fasta):
-            if file.endswith(".fasta"):
-                logging.debug('Fasta files found')
-                return()
-        
-        logging.error('No fasta files found in directory')
-        sys.exit()        
 
     def check_reference(self):
         '''
