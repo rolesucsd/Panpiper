@@ -1,0 +1,10 @@
+name: amrfinder
+channels:
+  - bioconda
+  - r
+  - defaults
+  - conda-forge
+  - cruizperez
+dependencies:
+  - ncbi-amrfinderplus=3.10.30
+  - perl=5.32.1

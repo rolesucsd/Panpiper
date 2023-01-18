@@ -1,0 +1,7 @@
+name: virsorter
+channels:
+  - bioconda
+dependencies:
+  - virsorter=2.2.3
+  - checkv=1.0.1
+  - dram=1.4.5

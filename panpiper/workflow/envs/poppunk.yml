@@ -1,0 +1,5 @@
+name: poppunk
+channels:
+  - bioconda
+dependencies:
+  - poppunk=2.6.0

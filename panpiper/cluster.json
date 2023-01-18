@@ -1,0 +1,13 @@
+{
+    "__default__":
+    {
+	"account": "knightlab",
+        "mem": "100G",
+        "time": "48:00:00",
+        "cpus": 20,
+        "ntasks-per-node": 20,
+        "nodes": 20,
+        "mail-type": "END,FAIL",
+        "mail-user": "roles@ucsd.edu"
+    }
+}

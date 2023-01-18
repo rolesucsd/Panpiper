@@ -1,0 +1,5 @@
+name: raxml
+channels:
+  - bioconda
+dependencies:
+  - raxml=8.2.12

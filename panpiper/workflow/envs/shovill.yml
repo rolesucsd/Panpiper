@@ -1,0 +1,8 @@
+name: shovill
+channels:
+  - cruizperez
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - shovill=1.1.0
