@@ -1,5 +1,0 @@
-Can't locate local/lib.pm in @INC (you may need to install the local::lib module) (@INC contains: /home/roles/perl5/lib/perl5 /home/roles/anaconda3/envs/amrfinder/lib/perl5/5.32/site_perl /home/roles/anaconda3/envs/amrfinder/lib/perl5/site_perl /home/roles/anaconda3/envs/amrfinder/lib/perl5/5.32/vendor_perl /home/roles/anaconda3/envs/amrfinder/lib/perl5/vendor_perl /home/roles/anaconda3/envs/amrfinder/lib/perl5/5.32/core_perl /home/roles/anaconda3/envs/amrfinder/lib/perl5/core_perl .).
-BEGIN failed--compilation aborted.
-[36m[2023-01-18 07:55:54] WARNING:[0m Output directory ../../Package_test/ already exists
-[36m[2023-01-18 07:55:54] INFO:[0m Run pangenome creation and analysis
-[36m[2023-01-18 07:55:54] INFO:[0m snakemake --use-conda --latency-wait 20 -s /panfs/roles/Panpiper/panpiper/workflow/pangenome.smk --config out=../../Package_test/ fastq=skip fasta=../../Package_test/Quality/Assembly_filter list=../../Package_test/Quality/sample_list.txt ref=/panfs/roles/Package_test/reference/9343.fna params=../../Package_test/parameters.tab --cores 40

@@ -5,6 +5,7 @@ import os
 import subprocess
 import logging
 import glob
+import shlex, subprocess
 
 from messages import Message
 
@@ -24,6 +25,7 @@ class Workflow(object):
         cmd = ['snakemake',
                '--use-conda',
                '--latency-wait', '20',
+               '--rerun-incomplete',
                '-s', snakefile,
                '--config',
                'out='+self.output,
@@ -61,21 +63,14 @@ class Workflow(object):
             cmd += ['--jobs', str(self.max_jobs),
                     '--local-cores', str(self.max_cores)]
                 
-        if self.cluster_type == 'qsub':
+        if self.cluster_type == 'qsub' or  self.cluster_type == 'slurm':
             
-            cluster_cmd = '--cluster-config' + ' ' + self.cluster_config
+            cluster_cmd = ['--cluster-config', self.cluster_config]
 #            cluster_cmd = cluster_cmd + ' -e ' + self.output + 'report/cluster_err' + ' -o ' + self.output + 'report/cluster_out'
-            cluster_cmd = cluster_cmd + ' --cluster ' + '"' + self.cluster_args + '"'
+            cluster_args_mod = '"' + self.cluster_args + '"'
+            cluster_cmd += [' --cluster ', cluster_args_mod]
             # Final snakemake command
-            cmd += [cluster_cmd]
-
-        if self.cluster_type == 'slurm':
-            
-            cluster_cmd = '--cluster-config' + ' ' + self.cluster_config
-#            cluster_cmd = cluster_cmd + ' -e ' + self.output + 'report/cluster_err' + ' -o ' + self.output + 'report/cluster_out'
-            cluster_cmd = cluster_cmd + ' --cluster ' + '"' + self.cluster_args + '"'
-            # Final snakemake command
-            cmd += [cluster_cmd]
+            cmd += cluster_cmd
 
         # Only install conda envs if only_conda
         if self.only_conda:
@@ -88,8 +83,10 @@ class Workflow(object):
             cmd.append('--unlock')
 
         logging.info(' '.join(cmd))
+        args = shlex.split(' '.join(cmd))
+
         # Start snakemake process and read stdout and stderr (also save in logger)
-        process = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, text=True)
+        process = subprocess.Popen(args, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, text=True)
         if self.log_lvl == 'DEBUG':
             for line in iter(process.stdout.readline, ""):
                 logging.debug(line.strip())

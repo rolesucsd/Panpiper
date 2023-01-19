@@ -6,3 +6,5 @@ test/
 .snakemake/
 conda_build/
 databases/
+.DS_Store
+slurm*

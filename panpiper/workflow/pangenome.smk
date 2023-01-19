@@ -32,8 +32,8 @@ rule all:
         os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.bwt"),
         os.path.join(OUT,"Pangenome/Phylogroups/db/db_clusters.csv"),
         expand(os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.gff"), file=filtered),
-        os.path.join(OUT,"Pangenome/Panaroo/eggnog.txt"),
-        expand(os.path.join(OUT,"Pangenome/Virsorter/DRAMv/{file}/annotations.tsv"), file=filtered),
+#        os.path.join(OUT,"Pangenome/Panaroo/eggnog.txt"),
+#        expand(os.path.join(OUT,"Pangenome/Kraken/{file}.report"), file=filtered),
 
 
 # Set up files for downstream analysis
@@ -42,13 +42,18 @@ rule setup:
         expand(os.path.join(FASTA, "{file}/{file}.fna"), file=filtered),
     params:
         os.path.join(OUT,"Pangenome")
+    conda:
+        "envs/amrfinder.yml"
+    log:
+        os.path.join(OUT,"report/setup.log"),
     output:
         os.path.join(OUT,"Pangenome/Unitig/unitig.list"),
         os.path.join(OUT,"Pangenome/Phylogroups/poppunk.list"),
     shell:
         """
-        chmod u+x scripts/setup.sh
-        scripts/setup.sh {input} {params}
+        chmod u+x workflow/scripts/setup.sh
+        workflow/scripts/setup.sh {input} {params} &> {log}
+        amrfinder -u
         """
 
 
@@ -182,6 +187,7 @@ rule iqtree:
 # TODO: Does snakemake allow optional parameters? 
 rule amrfinder:
     input:
+        setup=os.path.join(OUT,"Pangenome/Unitig/unitig.list"),
         fasta=os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.faa"),
         gff=os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.gff"),
     params:
@@ -194,7 +200,6 @@ rule amrfinder:
         os.path.join(OUT,"Pangenome/AMR/{file}.txt"),
     shell:
         """
-        amrfinder -u
         amrfinder -p {input.fasta} --plus --threads 20 --mutation_all {params.mut} -o {output} &> {log}
         """
 
@@ -280,24 +285,6 @@ rule poppunk_fit:
         "poppunk --fit-model {params.model} --ref-db {params.db} --K 4 &> {log}"
 
 
-# Setup databases to identify viruses
-rule virus_setup:
-    input:
-        expand(os.path.join(FASTA, "{file}/{file}.fna"), file=filtered),
-    conda:
-        "envs/virsorter.yml",
-    log:
-        os.path.join(OUT,"report/virsorter_setup.log"),
-    output:
-        directory("databases/virsorter"),
-    shell:
-        """
-        virsorter setup -d {output} -j 4 &> {log}
-        checkv download_database {output} &> {log}
-        DRAM-setup.py prepare_databases --skip_uniref --output_dir {output} &> {log}
-        """
-
-
 rule virsorter_run:
     input:
         dbdir=directory("databases/virsorter"),
@@ -311,85 +298,14 @@ rule virsorter_run:
     output:
         os.path.join(OUT,"Pangenome/Virsorter/VS2_1/{file}/final-viral-combined.fa"),
     shell:
-        "virsorter run --keep-original-seq -i {input.fasta} -w {params.outdir} --include-groups dsDNAphage,ssDNA --min-length 5000 --min-score 0.5 -j 28 all &> {log}"
-
-
-rule checkV:
-    input:
-        virsorter=os.path.join(OUT,"Pangenome/Virsorter/VS2_1/{file}/final-viral-combined.fa"),
-    params:
-        outdir=os.path.join(OUT,"Pangenome/Virsorter/Checkv/{file}"),
-    conda:
-        "envs/virsorter.yml"
-    log:
-        os.path.join(OUT,"report/checkv_{file}.log"),
-    output:
-        os.path.join(OUT,"Pangenome/Virsorter/Checkv/{file}/viruses.fna"),
-    shell:
-        "checkv end_to_end {input} {params.outdir} -t 28 -d databases/virsorter &> {log}"
-
-
-rule virsorter_run2:
-    input:
-        os.path.join(OUT,"Pangenome/Virsorter/Checkv/{file}/viruses.fna"),
-    params:
-        prov=os.path.join(OUT,"Pangenome/Virsorter/Checkv/{file}/proviruses.fna"),
-        combined=os.path.join(OUT,"Pangenome/Virsorter/Checkv/{file}/combined.fna"),
-        outdir=os.path.join(OUT,"Pangenome/Virsorter/VS2_2/{file}"),
-    conda:
-        "envs/virsorter.yml"
-    log:
-        os.path.join(OUT,"report/virsorter_run2_{file}.log"),
-    output:
-        i=os.path.join(OUT,"Pangenome/Virsorter/VS2_2/{file}/final-viral-combined-for-dramv.fa"),
-        v=os.path.join(OUT,"Pangenome/Virsorter/VS2_2/{file}/viral-affi-contigs-for-dramv.tab"),
-    shell:
-        """
-        cat {input} {params.prov} > {params.combined} 
-        virsorter run --seqname-suffix-off --viral-gene-enrich-off --provirus-off --prep-for-dramv -i {params.combined} -w {params.outdir} --include-groups dsDNAphage,ssDNA --min-length 5000 --min-score 0.5 -j 28 all &> {log}
-        """
-
-
-rule dramv:
-    input:
-        i=os.path.join(OUT,"Pangenome/Virsorter/VS2_2/{file}/final-viral-combined-for-dramv.fa"),
-        v=os.path.join(OUT,"Pangenome/Virsorter/VS2_2/{file}/viral-affi-contigs-for-dramv.tab"),
-    params:
-        outint=os.path.join(OUT,"Pangenome/Virsorter/DRAMv/{file}/annotations.tsv"),
-        outdir=os.path.join(OUT,"Pangenome/Virsorter/DRAMv/{file}"),
-    conda:
-        "envs/virsorter.yml"
-    log:
-        os.path.join(OUT,"report/dramv_{file}.log"),
-    output:
-        os.path.join(OUT,"Pangenome/Virsorter/DRAMv/{file}/annotations.tsv"),
-    shell:
-        """
-        DRAM-v.py annotate -i {input} -v {input} -o {params} --skip_trnascan --threads 28 --min_contig_size 1000 &> {log}
-        DRAM-v.py distill -i {params.outint} -o {params.outdir} &> {log}
-        """
-
-
-# Annotate pangenome with eggnog
-rule eggnog_mapper_db:
-    input:
-        expand(os.path.join(FASTA, "{file}/{file}.fna"), file=filtered),
-    conda:
-        "envs/eggnog.yml"
-    log:
-        os.path.join(OUT,"report/eggnog_db.log"),
-    output:
-        directory("databases/eggnog_mapper_db"),
-    shell:
-        """
-        mkdir {output}
-        download_eggnog_data.py -f --data_dir {output} --taxa Bacteria &> {log}
+        """g
+        virsorter config --init-source --db-dir={params.db}
+        virsorter run --keep-original-seq -i {input.fasta} -w {params.outdir} --include-groups dsDNAphage,ssDNA --min-length 5000 --min-score 0.5 -j 28 all &> {log}
         """
 
 
 rule eggnog_mapper:
     input:
-        db=directory("databases/eggnog_mapper_db"),
         fasta=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
     params:
         os.path.join(OUT,"Pangenome/Panaroo"),
@@ -400,7 +316,6 @@ rule eggnog_mapper:
     output:
         os.path.join(OUT,"Pangenome/Panaroo/eggnog.txt"),
     shell:
-        "emapper.py -i {input.fasta} --sensmode more-sensitive --data_dir {input.db} -o {params} &> {log}"
-
-
-
+        """
+        emapper.py -i {input.fasta} --data-dir databases/eggnog --sensmode more-sensitive -o {params} &> {log}
+        """

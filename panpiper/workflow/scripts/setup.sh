@@ -12,13 +12,14 @@ OUT_DIR="${!#}"
 #done < $1 > ../MGWAS/Fsm-lite/fsm-lite.list
 
 # Poppunk
-mkdir ../MGWAS/Phylogroups
+mkdir -p $OUT_DIR/Phylogroups
 exec 4<"$1"
-echo Start
-while IFS=$' \t\r\n' read -r p; do
-	NAME="basename $p .fna"
-	echo -e "$NAME	$p"
-done < $SAMPLES > $OUT_DIR/Phylogroups/poppunk.list
+echo Building poppunk list
+for p in $SAMPLES; do 
+	echo $p
+	NAME=basename $p .fna
+	echo -e "$NAME	$p" >> $OUT_DIR/Phylogroups/poppunk.list
+done
 
 # Snippy
 #mkdir ../MGWAS/Snippy
@@ -28,13 +29,14 @@ done < $SAMPLES > $OUT_DIR/Phylogroups/poppunk.list
 #	echo -e "$p	../Assembly/Shovill/$p/$p.fna"
 #done < $1 > ../MGWAS/Snippy/snippy.list
 
-mkdir ../MGWAS/Unitig
+mkdir -p $OUT_DIR/Unitig
 # Unitig
 exec 4<"$1"
-echo Start
-while IFS=$' \t\r\n' read -r p; do
-	echo -e $p
-done < $SAMPLES > $OUT_DIR/Unitig/unitig.list
+echo Building unitig list
+for p in $SAMPLES; do 
+	echo $p
+	echo -e $p >> $OUT_DIR/Unitig/unitig.list
+done
 
 #for f in *_filtered_sorted; do 
 #	n=$(echo $f | cut -d'_' -f 1)
