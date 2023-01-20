@@ -85,7 +85,7 @@ if __name__ == "__main__":
     parser.add_argument("-l", "--log")
     parser.add_argument("-s", "--stat")
     parser.add_argument("-a", "--ani")
-    parser.add_argument("-o", "--outfile")
+    parser.add_argument("-o", "--outpath")
     parser.add_argument("-p", "--completeness", default=95, type=float)
     parser.add_argument("-c", "--contamination", default=5, type=float)
     parser.add_argument("-sh", "--strain_heterogeneity", default=0, type=float)
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     parser.add_argument("-gc", "--GC", default=0, type=float)
     args = parser.parse_args()
     print(args)
-    if args.outfile:
+    if args.outpath:
         # create a file with the names of all the fastas in it
         if args.log:
             checkm_list, checkm_fail = checkm_filter(sample_list,args.log,args.completeness,args.contamination)
@@ -121,9 +121,10 @@ if __name__ == "__main__":
         # merge dataframes of failed samples
         checkm_fail = checkm_fail.rename(columns = {'Bin_ID':'Sample'})
         checkm_fail = pd.merge(checkm_fail, stats_fail, on = ['Sample'], how = 'outer')
-        if len(args.outfile) > 0:
-            with open(args.outfile, mode='wt', encoding='utf-8') as myfile:
+        if len(args.outpath) > 0:
+            passed = args.outpath + "/sample_list.txt"
+            with open(passed, mode='wt', encoding='utf-8') as myfile:
                 myfile.write('\n'.join(sample_list))
-        checkm_fail.to_csv('report/failed_samples_checkm.csv', sep ='\t')
-        ani_fail.to_csv('report/failed_samples_ani.csv', sep ='\t')
+        checkm_fail.to_csv(args.outpath+'/failed_samples_checkm.csv', sep ='\t')
+        ani_fail.to_csv(args.outpath+'/failed_samples_ani.csv', sep ='\t')
         

@@ -4,9 +4,9 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - r-base=4.1.2
-  - r-dplyr=1.0.7
-  - r-essentials=4.1
-  - r-reshape2=1.4.4
-  - r-stringr=1.4.0
+  - r-base=4.2.2
   - r-tidyverse=1.3.1
+  - r-reshape2=1.4.4
+  - r-pheatmap=1.0.12
+  - r-dt=0.23
+  - r-plotly=4.10.1

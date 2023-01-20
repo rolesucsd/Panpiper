@@ -2,60 +2,66 @@
 
 # Package
 
-Keyword description: 
+This package conducts bacterial isolate analysis for one species.  
 
-* Accomplishes 1
-    * Explanation
-* Accomplishes 2
-    * Explanation
+* Assembly
+    * Using [shovill](https://github.com/tseemann/shovill) the paired fastq files are assembled and sorted into ones which pass and fail assembly
+* Quality control
+    * The assemblies are analyzed with [CheckM](https://github.com/Ecogenomics/CheckM) and [FastANI](https://github.com/ParBLiSS/FastANI)
+    * Based on user-defined thresholds the samples are sorted into ones which pass or don't pass requirements
+* Pangenome analysis
+    * The assemblies are combined in a pangenome with [Panaroo](https://github.com/gtonkinhill/panaroo) and annotated with [AMRFinderPlus](https://github.com/ncbi/amr), [Prokka](https://github.com/tseemann/prokka), [EggNOG-mapper](https://github.com/eggnogdb/eggnog-mapper), and [Kraken2](https://github.com/DerrickWood/kraken2)
+    * The core genome alignment is used to create a phylogenetic tree with [FastTree](http://www.microbesonline.org/fasttree/), [RAxML](https://github.com/stamatak/standard-RAxML), and [IQ-TREE](https://github.com/Cibiv/IQ-TREE)
+    * The samples are divided into phylogroups with [PopPUNK](https://github.com/bacpop/PopPUNK)
+* Genome-wide association study
+    * The pangenome is used with a continuous or binary phenotype to conduct a genome-wide association study with [Pyseer](https://github.com/mgalardini/pyseer)
 
 ## Installation
 
 Create package and install dependencies 
 
 ```sh
-conda create -n package -c bioconda -c conda-forge snakemake mamba
-conda activate package
-pip install package
+conda create -n panpiper -c bioconda -c conda-forge snakemake mamba
+conda activate panpiper
+pip install panpiper
 ```
 
-Download any necessary databases (perhaps kraken)
-```sh
-code
-```
+Download databases
 
-## Usage
-
-Input: 
-
-* subdirectory of the package directory intitled "resources"
-    * directory fastq for assembly workflow
-    * directory fasta for quality workflow
-    * directory ref for quality workflow
-    * directory fasta for pangenome workflow 
-
-Run Package:
-
-* Package can be run at three starting points: 
+* The databses necessary will be downloaded automatically except in the case of Kraken2 and EggNOG-mapper. These databases have already been downloaded and are maintained in the package structure. In the case that you would like to use your own database, these databases can be downloaded into user-defined directories and can be referenced in the arguments as follows
 
 ```sh
-package -q fastq directory -a fasta directory -s sample_list -r reference file with path -o output directory "
-```
-
-
-### Run on a compute cluster
-MAGinator can run on compute clusters using qsub (torque), sbatch (slurm), or drmaa structures. The --cluster argument toggles the type of compute cluster infrastructure. The --cluster_info argument toggles the information given to the submission command, and it has to contain the following keywords {cores}, {memory}, {runtime}, which are used to forward resource information to the cluster.
-
-A qsub MAGinator can for example be run with the following command (... indicates required arguments, see above):
-```sh
-maginator ... --cluster qsub --cluster_info "-l nodes=1:ppn={cores}:thinnode,mem={memory}gb,walltime={runtime}"
+panpiper ... --kraken_dir {directory} --eggnog_dir {directory}
 ```
 
 ## Workflow
 
+### Assembly: 
+The fastq files should all be in a single directory. They need to be paired-end. 
 
-## Output
+```sh
+panpiper -w assembly -o {output directory} -q {fastq directory} 
+```
 
-* folder/
-    * file - description
+### Quality control: 
+The fasta file directory should contain a subdirectory for each sample where the subdirectory name is the sample of the sample. The fasta file within these directories should be formatted as contigs.fa. This is the standard output from Shovill. The sample list should have one sample name per line which corresponds to the directory names. The reference fasta file should be the representative strain of the species which the samples will be compared to using average nucleotide identity.
+
+```sh
+panpiper -w quality -o {ouput directory} -a {fasta directory} -s  {sample list} -r {reference fasta file}
+```
+
+### Pangenome: 
+The fasta file directory should contain a subdirectory for each sample where the subdirectory name is the sample of the sample. The fasta file within these directories should be formatted as contigs.fa. This is the standard output from Shovill. The sample list should have one sample name per line which corresponds to the directory names. The reference fasta file should be the representative strain of the species which the samples will be compared to using average nucleotide identity.
+
+```sh
+panpiper -w pangenome  -o {ouput directory} -a {fasta directory} -s  {sample list} -r {reference fasta file}
+```
+
+
+### Run on a compute cluster
+To run on a compute cluster, the cluster type needs to be specified (ie "slurm" below). In addition a "cluster.json" file must be provided which specifies details such as cluster.account, cluster.mem, etc. The example below is a qsub example. 
+
+```sh
+panpiper ... --cluster_type slurm --cluster_config cluster.json --cluster_args "sbatch -A {cluster.account} --mem {cluster.mem} -t {cluster.time} --cpus-per-task {cluster.cpus}"
+```
     

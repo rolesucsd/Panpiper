@@ -17,7 +17,8 @@ exec 4<"$1"
 echo Building poppunk list
 for p in $SAMPLES; do 
 	echo $p
-	NAME=basename $p .fna
+	NAME=$(basename -- "$p")
+	NAME="${NAME%.fna}"
 	echo -e "$NAME	$p" >> $OUT_DIR/Phylogroups/poppunk.list
 done
 

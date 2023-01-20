@@ -4,14 +4,14 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="package", 
+    name="panpiper", 
     version="0.1.1",
     author="Renee Oles",
     author_email="roles@health.ucsd.edu",
-    description="Package: description",
+    description="Panpiper: snakemake workflow for bacterial isolate analysis",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/Package",
+    url="https://github.com/rolesucsd/Panpiper",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -23,9 +23,9 @@ setuptools.setup(
     install_requires=[
         "setuptools"],
     entry_points = {
-        'console_scripts': ['package = package.main:cli']
+        'console_scripts': ['panpiper = panpiper.main:cli']
     },
     include_package_data=True,
     zip_safe=False,
-    package_data = {'package': ['workflow/*']}
+    package_data = {'panpiper': ['workflow/*']}
 )

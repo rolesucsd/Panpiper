@@ -27,13 +27,12 @@ filtered = read_filtered_files()
 # Output
 rule all:
     input:
-        os.path.join(OUT,"Pangenome/AMR.txt"),
-        os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fna"),
+        os.path.join(OUT,"Pangenome/Summary/amr.png"),
         os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.bwt"),
-        os.path.join(OUT,"Pangenome/Phylogroups/db/db_clusters.csv"),
-        expand(os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.gff"), file=filtered),
-#        os.path.join(OUT,"Pangenome/Panaroo/eggnog.txt"),
-#        expand(os.path.join(OUT,"Pangenome/Kraken/{file}.report"), file=filtered),
+        os.path.join(OUT,"Pangenome/Summary/db_clusters.csv"),
+        os.path.join(OUT,"Pangenome/Summary/core_gene_alignment.aln.iqtree"),
+        os.path.join(OUT,"Pangenome/Summary/eggnog.txt"),
+        os.path.join(OUT,"Pangenome/Summary/kraken_ag.txt")
 
 
 # Set up files for downstream analysis
@@ -51,8 +50,8 @@ rule setup:
         os.path.join(OUT,"Pangenome/Phylogroups/poppunk.list"),
     shell:
         """
-        chmod u+x workflow/scripts/setup.sh
-        workflow/scripts/setup.sh {input} {params} &> {log}
+        chmod u+x scripts/setup.sh
+        scripts/setup.sh {input} {params} &> {log}
         amrfinder -u
         """
 
@@ -101,7 +100,7 @@ rule prokka_pan:
         gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
     params:
         name="pan_genome_reference",
-        outdir=os.path.join(OUT,"Pangenome/Panaroo/"),
+        outdir=os.path.join(OUT,"Pangenome/Summary/"),
     conda:
         "envs/prokka.yml"
     log:
@@ -140,12 +139,10 @@ rule fasttree:
         os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
     conda:
         "envs/fasttree.yml"
-    log:
-        os.path.join(OUT,"report/fasttree.log"),
     output:
         os.path.join(OUT,"Pangenome/Phylogeny/fasttree.nwk"),
     shell:
-        "FastTree -gtr -nt -gamma -seed 12345 {input} > {output} &> {log}"
+        "FastTree -gtr -nt -gamma -seed 12345{input} > {output}"
 
 
 # Build more accurate tree using fasttree as a starting point
@@ -162,7 +159,7 @@ rule raxml:
     output:
         os.path.join(OUT,"Pangenome/Phylogeny/RAxML_result.tree2"),
     shell:
-        "./standard-RAxML/raxmlHPC-AVX2 -m GTRCAT -F -f D -s {input.aln} -t {input.tre} -n tree2 -p 12345 -w {params.outdir} &> {log}"
+        "raxmlHPC-AVX2 -m GTRCAT -F -f D -s {input.aln} -t {input.tre} -p 12345 -n tree2 -w {params.outdir} &> {log}"
 
 
 # Continue to build tree from RAXML with iqtree
@@ -172,14 +169,19 @@ rule iqtree:
     input:
         aln=os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
         tre=os.path.join(OUT,"Pangenome/Phylogeny/RAxML_result.tree2"),
+    params:
+        os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln.iqtree"),
     conda:
         "envs/iqtree.yml"
     log:
         os.path.join(OUT,"report/iqtree.log"),
     output:
-        os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln.iqtree"),
+        os.path.join(OUT,"Pangenome/Summary/core_gene_alignment.aln.iqtree"),
     shell:
-        "iqtree -m GTR+I+G -nt AUTO -s {input.aln} -te {input.tre} &> {log}"
+        """
+        iqtree -m GTR+I+G -nt AUTO -s {input.aln} -te {input.tre} &> {log}
+        cp {params.output} {output}
+        """
 
 
 
@@ -211,31 +213,26 @@ rule concat_amr:
     log:
         os.path.join(OUT,"report/concat_amr.log"),
     output:
-        os.path.join(OUT,"Pangenome/AMR.txt"),
+        os.path.join(OUT,"Pangenome/Summary/AMR.txt"),
     shell:
-        "python scripts/concat_amrfinder.py {input} &> {log}"
+        "python scripts/concat_amrfinder.py -i {input} -o {output} &> {log}"
 
 
-# Mash- computes approximate distance between two samples QUICKLY
-# locality-sensitive hashing (called MinHash sketches which have been used in lots of areas ie website comparisons)
-# Time: 30 minutes for 571 samples
-rule mash_fasta:
+# Summarize antibiotic resistance accross all files
+rule graph_amr:
     input:
-        expand(os.path.join(OUT,"Assembly/{file}/{file}.fna"), file=filtered),
+        os.path.join(OUT,"Pangenome/Summary/AMR.txt"),
     params:
-        out=os.path.join(OUT,"Pangenome/Mash/fasta"),
-        pref=os.path.join(OUT,"Assembly/Shovill/"),
+        os.path.join(OUT,"Pangenome/Summary"),
     conda:
-        "envs/mash.yml"
+        "envs/r.yml"
     log:
-        os.path.join(OUT,"report/mash.log"),
+        os.path.join(OUT,"report/graph_amr.log"),
     output:
-        os.path.join(OUT,"Pangenome/Mash/fasta.tsv"),
+        os.path.join(OUT,"Pangenome/Summary/amr.png"),
     shell:
-        """
-        mash sketch -s 10000 -o {params.out} {input}
-        mash dist {params.out}.msh {params.out}.msh -t > {output} &> {log}
-        """
+        "Rscript scripts/AMR_heatmap.R -i {input} -o {params} &> {log}"
+
 
 # Work on phylogroup division using Poppunk
 rule poppunk_sketch:
@@ -274,48 +271,69 @@ rule poppunk_fit:
         os.path.join(OUT,"Pangenome/Phylogroups/db/db.dists.pkl"),
     params:
         db=os.path.join(OUT,"Pangenome/Phylogroups/db"),
+        out=os.path.join(OUT,"Pangenome/Phylogroups/db/db_clusters.csv"),
         model="lineage",
     conda:
         "envs/poppunk.yml"
     log:
         os.path.join(OUT,"report/poppunk_fit.log"),
     output:
-        os.path.join(OUT,"Pangenome/Phylogroups/db/db_clusters.csv"),
+        os.path.join(OUT,"Pangenome/Summary/db_clusters.csv"),
     shell:
-        "poppunk --fit-model {params.model} --ref-db {params.db} --K 4 &> {log}"
-
-
-rule virsorter_run:
-    input:
-        dbdir=directory("databases/virsorter"),
-        fasta=os.path.join(FASTA,"{file}/{file}.fna"),
-    params:
-        outdir=os.path.join(OUT,"Pangenome/Virsorter/VS2_1/{file}"),
-    conda:
-        "envs/virsorter.yml"
-    log:
-        os.path.join(OUT,"report/virsorter_run1_{file}.log"),
-    output:
-        os.path.join(OUT,"Pangenome/Virsorter/VS2_1/{file}/final-viral-combined.fa"),
-    shell:
-        """g
-        virsorter config --init-source --db-dir={params.db}
-        virsorter run --keep-original-seq -i {input.fasta} -w {params.outdir} --include-groups dsDNAphage,ssDNA --min-length 5000 --min-score 0.5 -j 28 all &> {log}
+        """
+        poppunk --fit-model {params.model} --ref-db {params.db} --K 4 &> {log}
+        cp {params.out} {output}
         """
 
 
 rule eggnog_mapper:
     input:
-        fasta=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
+        protein=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.faa"),
     params:
-        os.path.join(OUT,"Pangenome/Panaroo"),
+        outdir=os.path.join(OUT,"Pangenome/Summary"),
+        db="panpiper/databases/eggnog",
     conda:
         "envs/eggnog.yml"
     log:
         os.path.join(OUT,"report/eggnog_mapper.log"),
     output:
-        os.path.join(OUT,"Pangenome/Panaroo/eggnog.txt"),
+        os.path.join(OUT,"Pangenome/Summary/eggnog.txt"),
     shell:
         """
-        emapper.py -i {input.fasta} --data-dir databases/eggnog --sensmode more-sensitive -o {params} &> {log}
+        emapper.py -i {input.protein} --data_dir {params.db} -o {params.outdir} --override &> {log}
         """
+
+rule kraken:
+    input:
+        os.path.join(FASTA, "{file}/{file}.fna"),
+    params:
+        db="databases/kraken"
+    conda:
+        "envs/kraken.yml"
+    log:
+        os.path.join(OUT,"report/kraken_{file}.log"),
+    output:
+        out=os.path.join(OUT,"Pangenome/Kraken/{file}.out"),
+        report=os.path.join(OUT,"Pangenome/Kraken/{file}.report")
+    shell:
+        """
+        kraken2 --db {params.db} --output {output.out} --threads 20 --use-names --report {output.report} --use-mpa-style {input} &> {log}
+        """
+
+rule kraken_report:
+    input:
+        out=expand(os.path.join(OUT,"Pangenome/Kraken/{file}.out"), file=filtered),
+    params:
+        path=os.path.join(OUT,"Pangenome/Kraken"),
+        outpath=os.path.join(OUT,"Pangenome/Summary"),
+    conda:
+        "envs/r.yml"
+    log:
+        os.path.join(OUT,"report/kraken_summary.log"),
+    output:
+        report=os.path.join(OUT,"Pangenome/Summary/kraken_ag.txt")
+    shell:
+        """
+        kraken2 --db {params.db} --output {output.out} --threads 20 --use-names --report {output.report} --use-mpa-style {input} &> {log}
+        """
+

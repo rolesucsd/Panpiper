@@ -2,16 +2,17 @@
 #Renee Oles      9 Nov 2021
 #============================================================================================
 
-import sys
+import sys, getopt
 import os
 import numpy as np
 import pandas as pd
+import argparse
 
-def amr_concat(files, output, path=""):
+def amr_concat(files, output):
     """
     Concatenate the output of amr 
     """
-    output = path+output
+
     df = pd.DataFrame()
     for f in files:
         df_new = pd.read_csv(f, sep="\t")
@@ -24,6 +25,10 @@ def amr_concat(files, output, path=""):
     df.to_csv(output, header=True, index=False, sep='\t', mode='a')
     return 0
 
-if __name__ == "__main__":
-    print(sys.argv)
-    amr_concat(sys.argv, "AMR.txt", "../MGWAS/")
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--input', nargs='+', help='List of input files')
+    parser.add_argument('-o', '--output', help='Output file name')
+    args = parser.parse_args()
+
+    amr_concat(args.input, args.output)

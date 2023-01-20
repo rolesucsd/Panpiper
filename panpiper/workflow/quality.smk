@@ -14,7 +14,7 @@ FASTA = config['fasta']
 REFERENCE = config['ref']
 PARAMS = config['params']
 SAMPLE_LIST = config['list']
-SAMPLES_OUT = os.path.join(OUT, 'Quality/sample_list.txt')
+SAMPLES_OUT = os.path.join(OUT, 'Quality/"quality_report.html"')
 
 with open(PARAMS, 'r') as fh:   
     fl = [x.strip().split() for x in fh.readlines()]
@@ -92,8 +92,8 @@ rule checkm_to_graph:
         os.path.join(OUT,"report/checkm_graph.log"),
     shell:
         """
-        Rscript workflow/scripts/checkm-log.R {params.log}  &> {log}
-        Rscript workflow/scripts/checkm_bin-stats.R {input.stats}  &> {log}
+        Rscript scripts/checkm-log.R {params.log}  &> {log}
+        Rscript scripts/checkm_bin-stats.R {input.stats}  &> {log}
         """
 
 
@@ -108,8 +108,8 @@ rule fastani_list_create:
         os.path.join(OUT,"report/fastani_list_create.log"),
     shell:
         """
-        chmod u+x workflow/scripts/create_list.sh
-        workflow/scripts/create_list.sh {input} {params} {output} &> {log}
+        chmod u+x scripts/create_list.sh
+        scripts/create_list.sh {input} {params} {output} &> {log}
         """
 
 
@@ -134,16 +134,18 @@ rule fastani_long_to_wide:
     log:
         os.path.join(OUT,"report/fastani_long_to_wide.log"),
     shell:
-        "python workflow/scripts/long_to_wide.py {input} {output.txt} &> {log}"
+        "python scripts/long_to_wide.py {input} {output.txt} &> {log}"
 
 
 # Filter files based off user-defined rules
+# Need to edit this python file bc it's messy rn
 rule filter_files:
     input:
         ani=os.path.join(OUT,"Quality/FastANI/matrix_wide.txt"),
         stat=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
     params:
         checkm=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
+        outpath=os.path.join(OUT,"Quality"),
         ref=PARAMS_REF,
         gc=GC,
         genome_size=GENOME_SIZE,
@@ -158,5 +160,24 @@ rule filter_files:
         os.path.join(OUT,"Quality/sample_list.txt"),
     shell:
         """
-        python workflow/scripts/filter_isolates.py -o {output} -a {input.ani} -l {params.checkm} -s {input.stat} -r {params.ref} -gc {params.gc} -g {params.genome_size} -ac {params.ac} -cn {params.cn} -n {params.n} -lf {params.lf} &> {log}
+        python scripts/filter_isolates.py -o {params.outpath} -a {input.ani} -l {params.checkm} -s {input.stat} -r {params.ref} -gc {params.gc} -g {params.genome_size} -ac {params.ac} -cn {params.cn} -n {params.n} -lf {params.lf} &> {log}
         """
+
+rule print_results:
+    input:
+        ani=os.path.join(OUT,"Quality/FastANI/matrix_wide.txt"),
+        stat=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
+        log=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
+        passed=os.path.join(OUT,"Quality/sample_list.txt"),
+    params:
+        ref=PARAMS_REF,
+    conda:
+        "envs/r.yml"
+    log:
+        os.path.join(OUT,"report/print_files.log"),
+    output:
+        SAMPLES_OUT,
+    shell:
+        "Rscript -e \"rmarkdown::render('scripts/quality_report.Rmd', params=list(checkm = '{input.stat}', log = '{input.log}', ani = '{input.ani}', passed = '{input.passed}', ref = '{params.ref}'))\" &> {log}"
+
+

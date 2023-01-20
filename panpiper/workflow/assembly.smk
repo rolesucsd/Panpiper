@@ -57,6 +57,6 @@ rule move_complete:
         ASSEMBLY_OUT,
     shell:
         """
-        chmod u+x workflow/scripts/move_files.sh
-        workflow/scripts/move_files.sh {params} &> {log}
+        chmod u+x scripts/move_files.sh
+        scripts/move_files.sh {params} &> {log}
         """

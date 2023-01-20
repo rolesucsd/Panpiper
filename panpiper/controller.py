@@ -36,16 +36,16 @@ class Controller(object):
         self.check_params()
         self.check_out()
         if not any([self.unlock, self.only_conda, self.snake is not None]):
-            if(self.workflow is "assembly"):
+            if(self.workflow == "assembly"):
                 self.check_fastq()
-            elif(self.workflow is "quality"):
+            elif(self.workflow == "quality"):
                 try:
                     self.check_reference()
                     self.check_sample()
                 except Exception:
                     logging.error('Must provide reference file and sample list')                    
                     sys.exit()
-            elif(self.workflow is "pangenome"):
+            elif(self.workflow == "pangenome"):
                 try:
                     self.check_sample()
                 except Exception:

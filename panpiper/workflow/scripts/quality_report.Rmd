@@ -1,0 +1,179 @@
+---
+title: "Quality"
+author: "Renee Oles"
+date: "1/19/2023"
+output: html_document
+params:
+  checkm: checkm
+  log: log
+  ani: ani
+  passed: passed
+  ref: ref
+---
+
+```{r, include=FALSE}
+library(tidyverse)
+require(reshape2)
+library(RColorBrewer)
+library(pheatmap)
+library(DT)
+library(plotly)
+```
+
+```{r,  include=FALSE}
+checkm <- read.delim(params$checkm, check.names = FALSE)
+log <- read.delim(params$log)
+ani <- read.delim(params$ani, check.names = FALSE, row.names = 1)
+passed <- as.data.frame(read.delim(params$passed,col.names = "Sample", header=FALSE))
+ref <- params$ref
+```
+
+
+```{r, include=FALSE}
+passed$Passed <- "yes"
+checkm <- left_join(checkm, passed)
+colnames(log)[1] <- "Sample"
+log <- left_join(log, passed)
+log[is.na(log)] <- "no"
+checkm[is.na(checkm)] <- "no"
+ani[is.na(ani)] <- 70
+```
+
+## General Summary 
+This plot summarizes the contamination and completion of each individual sample.
+```{r, out.width="100%"}
+# plot the log file with all three variables in the same same graph
+data_long <- melt(log, id.vars=c("Sample", "Passed", "Marker_lineage"))  # convert to long format
+data_long$value <- as.numeric(as.character(data_long$value))
+p<-ggplot(data_long, aes(fill=Passed, x=Sample, y=value))+
+  geom_bar(stat="identity")+
+  theme_bw()+
+  ggtitle("CheckM")+
+  xlab("Isolates")+
+  ylab("")+
+  theme(axis.text.x = element_text(angle=90, hjust=1))+
+  scale_fill_manual(values=c("#62b587","grey"))+
+  facet_wrap(~variable, scale = "free_y", nrow=3)
+ggplotly(p)
+```
+
+
+## Stats Summary 
+This plot summarizes the assembly stats into a histogram. Samples are colored by whether or not they pass all the filter requirements.
+```{r, out.width="100%"}
+# plot the log file with all three variables in the same same graph
+data_long <- melt(checkm, id.vars=c("Sample", "Passed"))  # convert to long format
+data_long$value <- as.numeric(as.character(data_long$value))
+p <- ggplot(data_long, aes(fill=Passed, x=Sample, y=value))+
+  geom_bar(stat="identity")+
+  theme_bw()+
+  ggtitle("CheckM")+
+  xlab("Isolates")+
+  ylab("")+
+  theme(axis.text.x = element_text(angle=90, hjust=1))+
+  scale_fill_manual(values=c("#62b587","grey"))+
+  theme(panel.spacing.x=unit(0, "lines") , panel.spacing.y=unit(1,"lines"))+
+  facet_wrap(~variable, scale = "free_y", nrow = 5)
+ggplotly(p, height = 1500, width=1500)
+```
+
+## Sample-by-Sample Statistics
+
+The following plots show information for each individual sample. 
+
+```{r}
+checkm$contigs <- as.numeric(as.character(checkm$contigs))
+p<-ggplot(checkm, aes(y=contigs, x=Sample, fill=Passed))+
+  geom_bar(stat="identity")+
+  theme_bw()+
+  ggtitle("CheckM: Number of Contigs")+
+  xlab("Isolates")+
+  ylab("")+
+  guides(fill=guide_legend(title="Passed"))+
+  theme(axis.text.x = element_text(angle=90, hjust=1))+
+  scale_fill_manual(values=c("grey","#62b587"))
+ggplotly(p)
+```
+
+```{r}
+checkm$`N50 contigs` <- as.numeric(as.character(checkm$`N50 contigs`))
+p<-ggplot(checkm, aes(y=`N50 contigs`, x=Sample, fill=Passed))+
+  geom_bar(stat="identity")+
+  theme_bw()+
+  ggtitle("CheckM: N50 (contigs)")+
+  xlab("Isolates")+
+  ylab("")+
+  guides(fill=guide_legend(title="Passed"))+
+  theme(axis.text.x = element_text(angle=90, hjust=1))+
+  scale_fill_manual(values=c("#62b587","grey"))
+ggplotly(p)
+```
+
+
+```{r}
+checkm$`Genome size` <- as.numeric(as.character(checkm$`Genome size`))
+p<-ggplot(checkm, aes(y=`Genome size`, x=Sample, fill=Passed))+
+  geom_bar(stat="identity")+
+  theme_bw()+
+  ggtitle("CheckM: Genome size")+
+  xlab("Isolates")+
+  ylab("")+
+  guides(fill=guide_legend(title="Oassed"))+
+  theme(axis.text.x = element_text(angle=90, hjust=1))+
+  scale_fill_manual(values=c("#62b587","grey"))
+ggplotly(p)
+```
+
+```{r}
+checkm$GC <- as.numeric(as.character(checkm$GC))
+p<-ggplot(checkm, aes(y=GC, x=Sample, fill=Passed))+
+  geom_bar(stat="identity")+
+  theme_bw()+
+  ggtitle("CheckM: GC")+
+  xlab("Isolates")+
+  ylab("")+
+  guides(fill=guide_legend(title="Passed"))+
+  theme(axis.text.x = element_text(angle=90, hjust=1))+
+  scale_fill_manual(values=c("#62b587","grey"))
+ggplotly(p)
+```
+
+```{r}
+checkm$`Mean contig length` <- as.numeric(as.character(checkm$`Mean contig length`))
+p<-ggplot(checkm, aes(y=`Mean contig length`, x=Sample, fill=Passed))+
+  geom_bar(stat="identity")+
+  ggtitle("CheckM: Mean contig length")+
+  theme_bw()+
+  xlab("Isolates")+
+  ylab("")+
+  guides(fill=guide_legend(title="Passed"))+
+  theme(axis.text.x = element_text(angle=90, hjust=1))+
+  scale_fill_manual(values=c("#62b587","grey"))
+ggplotly(p)
+```
+
+# ANI 
+This figure is a heatmap of average nucleotide identity all against all. The highlighted sample is the reference.
+```{r, out.width="100%", out.height="100%"}
+Reference <- params$ref
+group <- data.frame(Reference=rownames(ani), row.names = rownames(ani))
+group[group$Reference %in% ref,1] <- 1
+group[group$Reference != 1,] <- 0
+group_cols = list(Reference= c("1"="black", "0"="white"))
+pheatmap(ani, annotation_row=group,annotation_colors=group_cols[1],color=colorRampPalette(c("white", "red"))(100), cluster_cols = FALSE)
+```
+
+## Statistic tables
+The following tables show the details for each of the assembly quality control parameters
+```{r}
+datatable(checkm, rownames=F, filter='top')
+```
+
+```{r}
+datatable(log, rownames=F, filter='top')
+```
+
+```{r}
+datatable(ani, rownames=F, filter='top')
+```
+

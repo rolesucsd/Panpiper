@@ -7,7 +7,7 @@ import logging
 import glob
 import shlex, subprocess
 
-from messages import Message
+from panpiper.messages import Message
 
 class Workflow(object):
 

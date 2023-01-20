@@ -3,13 +3,8 @@
 # Author- Renee Oles
 # Date- 7/2/2021
 ################
-
-#install.packages("broom",repos = "https://cloud.r-project.org")
-#install.packages("plyr",repos = "https://cloud.r-project.org")
-#install.packages("tidyverse",repos = "https://cloud.r-project.org")
-#install.packages("reshape2",repos = "https://cloud.r-project.org")
-#install.packages("ggplot2",repos = "https://cloud.r-project.org")
 require(tidyverse)
+
 args <- commandArgs(trailingOnly = TRUE)
 #meta <- "metadata/groups.txt"
 out_pref <- gsub("Quality.*", "", args[1])

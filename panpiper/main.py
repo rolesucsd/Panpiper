@@ -12,15 +12,8 @@ from os.path import join, dirname, basename
 from shutil import copyfile
 from argparse import RawTextHelpFormatter
 
-# Add back after package creation
-#from package.controller import Controller
-#from package.workflow import Workflow
-
-# Delete after package creation
-from controller import Controller
-from workflow import Workflow
-
-# token : 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
+from panpiper.controller import Controller
+from panpiper.workflow import Workflow
 
 # Snakefiles
 _ROOT = os.path.abspath(os.path.dirname(__file__))
