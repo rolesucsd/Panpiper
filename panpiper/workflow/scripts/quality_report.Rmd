@@ -52,7 +52,7 @@ p<-ggplot(data_long, aes(fill=Passed, x=Sample, y=value))+
   xlab("Isolates")+
   ylab("")+
   theme(axis.text.x = element_text(angle=90, hjust=1))+
-  scale_fill_manual(values=c("#62b587","grey"))+
+  scale_fill_manual(values=c("yes"="#62b587","no"="grey"))+
   facet_wrap(~variable, scale = "free_y", nrow=3)
 ggplotly(p)
 ```
@@ -71,7 +71,7 @@ p <- ggplot(data_long, aes(fill=Passed, x=Sample, y=value))+
   xlab("Isolates")+
   ylab("")+
   theme(axis.text.x = element_text(angle=90, hjust=1))+
-  scale_fill_manual(values=c("#62b587","grey"))+
+  scale_fill_manual(values=c("yes"="#62b587","no"="grey"))+
   theme(panel.spacing.x=unit(0, "lines") , panel.spacing.y=unit(1,"lines"))+
   facet_wrap(~variable, scale = "free_y", nrow = 5)
 ggplotly(p, height = 1500, width=1500)
@@ -91,7 +91,7 @@ p<-ggplot(checkm, aes(y=contigs, x=Sample, fill=Passed))+
   ylab("")+
   guides(fill=guide_legend(title="Passed"))+
   theme(axis.text.x = element_text(angle=90, hjust=1))+
-  scale_fill_manual(values=c("grey","#62b587"))
+  scale_fill_manual(values=c("yes"="#62b587","no"="grey"))
 ggplotly(p)
 ```
 
@@ -105,7 +105,7 @@ p<-ggplot(checkm, aes(y=`N50 contigs`, x=Sample, fill=Passed))+
   ylab("")+
   guides(fill=guide_legend(title="Passed"))+
   theme(axis.text.x = element_text(angle=90, hjust=1))+
-  scale_fill_manual(values=c("#62b587","grey"))
+  scale_fill_manual(values=c("yes"="#62b587","no"="grey"))
 ggplotly(p)
 ```
 
@@ -120,7 +120,7 @@ p<-ggplot(checkm, aes(y=`Genome size`, x=Sample, fill=Passed))+
   ylab("")+
   guides(fill=guide_legend(title="Oassed"))+
   theme(axis.text.x = element_text(angle=90, hjust=1))+
-  scale_fill_manual(values=c("#62b587","grey"))
+  scale_fill_manual(values=c("yes"="#62b587","no"="grey"))
 ggplotly(p)
 ```
 
@@ -134,7 +134,7 @@ p<-ggplot(checkm, aes(y=GC, x=Sample, fill=Passed))+
   ylab("")+
   guides(fill=guide_legend(title="Passed"))+
   theme(axis.text.x = element_text(angle=90, hjust=1))+
-  scale_fill_manual(values=c("#62b587","grey"))
+  scale_fill_manual(values=c("yes"="#62b587","no"="grey"))
 ggplotly(p)
 ```
 
@@ -148,7 +148,7 @@ p<-ggplot(checkm, aes(y=`Mean contig length`, x=Sample, fill=Passed))+
   ylab("")+
   guides(fill=guide_legend(title="Passed"))+
   theme(axis.text.x = element_text(angle=90, hjust=1))+
-  scale_fill_manual(values=c("#62b587","grey"))
+  scale_fill_manual(values=c("yes"="#62b587","no"="grey"))
 ggplotly(p)
 ```
 

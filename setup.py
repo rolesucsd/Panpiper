@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+
+# ----------------------------------------------------------------------------
+# Copyright (c) 2022--, Panpiper development team.
+#
+# Distributed under the terms of the Modified BSD License.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+# ----------------------------------------------------------------------------
+
 import setuptools
 
 with open("README.md", "r") as fh:
@@ -6,6 +16,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="panpiper", 
     version="0.1.1",
+    license='BSD-3-Clause'
     author="Renee Oles",
     author_email="roles@health.ucsd.edu",
     description="Panpiper: snakemake workflow for bacterial isolate analysis",

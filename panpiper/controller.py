@@ -1,3 +1,11 @@
+# ----------------------------------------------------------------------------
+# Copyright (c) 2022--, Panpiper development team.
+#
+# Distributed under the terms of the Modified BSD License.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+# ----------------------------------------------------------------------------
+
 import os
 import logging
 import sys
@@ -7,6 +15,9 @@ import re
 from Bio import SeqIO
 
 class Controller(object):
+        """
+        This class evaluates all user input to prepare for snakemake run.
+        """
 
     def __init__(self, ap):
      
@@ -17,7 +28,7 @@ class Controller(object):
         
         # Logger
         logging.basicConfig(format='\033[36m'+'[%(asctime)s] %(levelname)s:'+'\033[0m'+' %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=self.log_lvl)
-#        logging.info('Running Package version {}'.format(pkg_resources.require("package")[0].version))
+        logging.info('Running Package version {}'.format(pkg_resources.require("package")[0].version))
 
         # Force consistency
         self.output = os.path.join(self.output, '')
@@ -32,7 +43,7 @@ class Controller(object):
                 logging.error('cluster_args is required when running on a compute cluster')
                 sys.exit()
 
-        # Check input and output
+        # Check input, params, and output
         self.check_params()
         self.check_out()
         if not any([self.unlock, self.only_conda, self.snake is not None]):
@@ -55,28 +66,44 @@ class Controller(object):
         self.write_params(args)
 
     def check_params(self):
-        '''
-        Return error if parameters are not allowed
-        TODO: Add my parameters of interest to this file
-        '''
+        """
+        Checks parameter validity 
+
+        Raises
+        ------
+        Error
+            'Error: GC content is typically above 20'
+
+        TODO: Add more parameter checks
+        """
         if self.gc < 20:
             logging.error('GC content is typically above 20')
             sys.exit()
 
 
     def check_out(self):
-        '''
-        Creates output directory unless it exists already
-        '''
+        """
+        Tries to make output directory
+
+        Raises
+        ------
+        Warning
+            'Warning: Output directory already exists'
+        """
         try:
             os.makedirs(self.output+'logs')
         except FileExistsError:
             logging.warning('Output directory '+self.output+' already exists')
 
     def check_fastq(self):
-        '''
-        Check the fastq input directory
-        '''
+        """
+        Tries to find input fastq files
+
+        Raises
+        ------
+        Exception
+            'Exception: Fastq files not found'
+        """
         logging.debug('Checking input directory for fastq files')
         for file in os.listdir(self.fastq):
             if file.endswith(".fastq"):
@@ -88,9 +115,17 @@ class Controller(object):
 
 
     def check_reference(self):
-        '''
-        Check the fasta reference file
-        '''
+        """
+        Tries to open reference fasta file 
+
+        Raises
+        ------
+        Exception
+            'Exception: Reference file not found'
+
+        ValueError
+            'ValueError: Reference fasta file not in fasta format'
+        """
         logging.debug('Checking reference fasta file')
 
         try: 
@@ -101,13 +136,13 @@ class Controller(object):
             sys.exit()
 
         if not (fasta):
-            logging.error('Reference fasta file is not correct format')
+            logging.error('Reference fasta file not in fasta format')
             sys.exit()
             
     def check_list(self):
-        '''
-        Read sample list file
-        '''
+        """
+        Checks sample list file for fasta file list 
+        """
         logging.debug('Checking sample list file')
         
         with open(self.sample_list, 'r') as fh:
@@ -123,11 +158,11 @@ class Controller(object):
                     sys.exit()
 
     def write_params(self, args):
-        '''
-        Write parameters for snakemake workflows to a file
-        '''
-
-        pars = vars(args)
+        """
+        Add parameters to params to snakemake file 
+        """
+        
+        params = vars(args)
         self.params = self.output+'parameters.tab'
         fh = open(self.params, 'w')
         for k, v in pars.items():
