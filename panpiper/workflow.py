@@ -33,6 +33,7 @@ class Workflow(object):
         cmd = ['snakemake',
                '--use-conda',
                '--latency-wait', '20',
+               '--scheduler', 'greedy',
                '--rerun-incomplete',
                '-s', snakefile,
                '--config',
@@ -54,19 +55,9 @@ class Workflow(object):
             if self.cluster_type in ('qsub', 'slurm'):
                 try:
                     os.mkdir(self.output + 'report')
-                    os.mkdir(self.output + 'report/cluster_err')
                 except FileExistsError:
                     pass
-                try:
-                    os.mkdir(self.output + 'report/cluster_out')
-                except FileExistsError:
-                    pass
-            else:
-                try:
-                    os.mkdir(self.output + 'report/drmaa')
-                except FileExistsError:
-                    pass
-            
+
             # Add cluster info to snakemake command
             cmd += ['--jobs', str(self.max_jobs),
                     '--local-cores', str(self.max_cores)]
@@ -74,7 +65,8 @@ class Workflow(object):
         if self.cluster_type == 'qsub' or  self.cluster_type == 'slurm':
             
             cluster_cmd = ['--cluster-config', self.cluster_config]
-#            cluster_cmd = cluster_cmd + ' -e ' + self.output + 'report/cluster_err' + ' -o ' + self.output + 'report/cluster_out'
+#            cluster_cmd += ['--cluster-status slurm-status.py']
+#            cluster_cmd += [' -e ' + self.output + 'report/cluster_err' + ' -o ' + self.output + 'report/cluster_out']
             cluster_args_mod = '"' + self.cluster_args + '"'
             cluster_cmd += [' --cluster ', cluster_args_mod]
             # Final snakemake command
@@ -93,11 +85,12 @@ class Workflow(object):
         logging.info(' '.join(cmd))
         args = shlex.split(' '.join(cmd))
 
-        # Start snakemake process and read stdout and stderr (also save in logger)
+        # Run the snakemake workflow
         process = subprocess.Popen(args, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, text=True)
         if self.log_lvl == 'DEBUG':
             for line in iter(process.stdout.readline, ""):
                 logging.debug(line.strip())
+        
         process.wait()
         logging.debug('Snakemake returncode: '+str(process.returncode))
 

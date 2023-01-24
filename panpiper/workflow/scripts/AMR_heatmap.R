@@ -1,9 +1,15 @@
 #################
 # Title: AMR.R
-# Author- Renee Oles
+# Author: Renee Oles
 # Purpose: R Script to summarize the paths from the graph.py program
-# Output: A heatmap of presence/absence in an operon
-# Date- 9/23/2022
+# Input: 
+# 	amr: string, required
+#		A string of the filename of the AMR matrix to use to make the AMR matrix
+#	outfile: string, required
+# 		A string of the file prefix for the heatmap and edited wide format matrix
+# Output: 
+# 		A matrix, wide-format file, of each sample and whether (1) or not (0) it has the given amr gene
+#		A heatmap, png file file, of the presence/absence of the amr genes per sample
 ################
 
 # Libraries

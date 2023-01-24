@@ -15,9 +15,10 @@ source /home/roles/anaconda3/bin/activate
 
 conda activate panpiper
 
-#panpiper -o ../../Package_test --unlock 
-#panpiper -o ../../Package_test -q ../../Package_test/fastq -w assembly
+#bakta_db download --output /panfs/roles/Panpiper/panpiper/databases/bakta
+
+panpiper -o /panfs/roles/BF --unlock 
+panpiper -o /panfs/roles/BF -q /panfs/roles/Isolates/Reference/All -w assembly --cluster_type slurm --cluster_config cluster.json --cluster_args "sbatch -A {cluster.account} --mem {cluster.mem} -t {cluster.time} --cpus-per-task {cluster.cpus}"
+
 #panpiper -o /panfs/roles/Package_test -a /panfs/roles/Package_test/Assembly -s  /panfs/roles/Package_test/Assembly/complete_assembly_files.txt -r /panfs/roles/Package_test/reference/9343.fna -w quality
-
-#panpiper -o /panfs/roles/Package_test -a /panfs/roles/Package_test/Quality/Assembly_filter -s  /panfs/roles/Package_test/Quality/sample_list.txt -r /panfs/roles/Package_test/reference/9343.fna -w pangenome --cluster_type slurm --cluster_config cluster.json --cluster_args "sbatch -A {cluster.account} --mem {cluster.mem} -t {cluster.time} --cpus-per-task {cluster.cpus}"
-
+#panpiper -o /panfs/roles/Package_test -a /panfs/roles/Package_test/Quality/Assembly_filter -s  /panfs/roles/Package_test/Quality/sample_list.txt -r /panfs/roles/Package_test/reference/9343.fna -w pangenome 

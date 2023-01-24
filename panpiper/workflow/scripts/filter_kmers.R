@@ -1,8 +1,12 @@
 #################
 # Title: filter_kmers.R
-# Author- Renee Oles
-# Purpose: R Script to filter and correct p values
-# Date- 06/07/2022
+# Author: Renee Oles
+# Purpose: R Script to filter and correct p values by holm's correction
+# Input: 
+#	input: string
+#		A string of the full path of the file to read in
+#	output: string
+#		A string of thefull path of the output file
 ################
 args <- commandArgs(trailingOnly = TRUE)
 input <- args[1]

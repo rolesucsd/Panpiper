@@ -15,9 +15,9 @@ import re
 from Bio import SeqIO
 
 class Controller(object):
-        """
-        This class evaluates all user input to prepare for snakemake run.
-        """
+    """
+    This class evaluates all user input to prepare for snakemake run.
+    """
 
     def __init__(self, ap):
      
@@ -28,12 +28,13 @@ class Controller(object):
         
         # Logger
         logging.basicConfig(format='\033[36m'+'[%(asctime)s] %(levelname)s:'+'\033[0m'+' %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=self.log_lvl)
-        logging.info('Running Package version {}'.format(pkg_resources.require("package")[0].version))
+        logging.info('Running Panpiper version {}'.format(pkg_resources.require("panpiper")[0].version))
 
         # Force consistency
         self.output = os.path.join(self.output, '')
 
         # Check cluster info input
+        # TODO: update to check cluster information
         if self.cluster_type is not None:
             if self.cluster_args is not None:
                 if len(re.findall('{cluster.mem}|{cluster.time}|{cluster.cpus}', self.cluster_args)) != 3: 
@@ -91,7 +92,7 @@ class Controller(object):
             'Warning: Output directory already exists'
         """
         try:
-            os.makedirs(self.output+'logs')
+            os.makedirs(self.output)
         except FileExistsError:
             logging.warning('Output directory '+self.output+' already exists')
 
@@ -162,7 +163,7 @@ class Controller(object):
         Add parameters to params to snakemake file 
         """
         
-        params = vars(args)
+        pars = vars(args)
         self.params = self.output+'parameters.tab'
         fh = open(self.params, 'w')
         for k, v in pars.items():

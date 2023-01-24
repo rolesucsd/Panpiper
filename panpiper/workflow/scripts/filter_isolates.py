@@ -1,7 +1,3 @@
-'''============================================================================================
-Renee Oles      12 Nov 2021
-============================================================================================'''
-
 import sys, getopt
 import os
 import numpy as np
@@ -12,14 +8,37 @@ import argparse
 def checkm_filter(sample_list, file, completeness, contamination):
     """
     Filter samples based off checkm parameters
+
+    Parameters 
+    ----------
+    sample_list: string, required
+    A text file which will contain names of all samples which pass the filters
+
+    file: string, required
+    A string of the filename of the checkm output, the log file
+
+    completeness: int, default = 95
+    An integer of the cutoff value at which to remove samples if they are under this number
+
+    contamination: int, default = 5
+    An integer of the cutoff value at which to remove samples if they are above this number
+
+    Returns
+    ----------
+    sample_pass: list
+    The samples that passed the filters at this step returned as a list
+
+    sample_fail: dataframe
+    The samples that failed the filtes at this step returned as a dataframe which contain information about why they failed
     """
+
     # Reads the checkm text file
     df = pd.read_csv(file, sep='\t', header=0)
     # Includes completeness, contamination, and strain heterogeneity
     # Filter dataframe
     # For each row in the dataframe, only include a sample in a list 
     # If it is above a certain value in each of the three categories
-    # Completion above 90, Contamination below 20 or Contamination above 20 if Strain heterogenity below 20
+    # Completion above 95, Contamination below 5
     df_pass = df[df["Completeness"] >= completeness]
     df_pass = df_pass[df_pass["Contamination"] <= contamination] 
     # Return the list of samples
@@ -27,14 +46,42 @@ def checkm_filter(sample_list, file, completeness, contamination):
     sample_pass = [*set(sample_pass)]
     
     # Return the failed samples as a dataframe
-    df_fail = df[(df["Completeness"] < completeness) | (df["Contamination"] > contamination)]
-    return sample_pass, df_fail 
-    #return sample_pass
+    sample_fail = df[(df["Completeness"] < completeness) | (df["Contamination"] > contamination)]
+    return sample_pass, sample_fail 
 
 def checkm_stats_filter(sample_list, file, genome_size, contig_number, N50, GC):
     """
-    Filter samples based off checkm bin stats parameters
+    Filter samples based off checkm parameters
+
+    Parameters 
+    ----------
+    sample_list: string, required
+    A text file which will contain names of all samples which pass the filters
+
+    file: string, required
+    A string of the filename of the checkm output, the stat file
+
+    genome_size: int, required
+    An integer of the size of the reference genome, samples are filtered out if their genome size is drastically different
+
+    contig_number: int, default = 1000
+    An integer of the cutoff value at which to remove samples if their assembly is greater than 1000 contigs
+
+    N50: int, default = 5000
+    An integer of the max N50 value, samples are filtered out if they exceed this value
+
+    GC: int, required
+    An integer of the average GC content of this species, samples are filtered out if they vary too much from this value
+
+    Returns
+    ----------
+    sample_pass: list
+    The samples that passed the filters at this step returned as a list
+
+    sample_fail: dataframe
+    The samples that failed the filtes at this step returned as a dataframe which contain information about why they failed
     """
+
     # Reads the checkm text file
     df = pd.read_csv(file, sep='\t', header=0)
     # For each row in the dataframe, only include a sample in a list 
@@ -44,7 +91,7 @@ def checkm_stats_filter(sample_list, file, genome_size, contig_number, N50, GC):
     maxi = genome_size+genome_size*.5
     print(mini, maxi)
     # Subset the dataframe for the failed samples
-    df_fail = df[(df["contigs"] > contig_number) | (df["N50 contigs"] < N50) | (df["Genome size"] < int(mini)) | 
+    sample_fail = df[(df["contigs"] > contig_number) | (df["N50 contigs"] < N50) | (df["Genome size"] < int(mini)) | 
         (df["Genome size"] > int(maxi)) | (df["GC"] > (GC+GC*.1)/100) | (df["GC"] < (GC-GC*.1)/100)]
 
     df = df[df["contigs"] <= contig_number]
@@ -57,24 +104,47 @@ def checkm_stats_filter(sample_list, file, genome_size, contig_number, N50, GC):
     # Return the list of samples and the the failed dataframe
     sample_list = df["Sample"].tolist()
     sample_list = [*set(sample_list)]
-    return sample_list, df_fail
+    return sample_list, sample_fail
 
 def ani_filter(sample_list, file, ani, reference):
     """
-    Filter samples based off ani parameters
+    Filter samples based off checkm parameters
+
+    Parameters 
+    ----------
+    sample_list: string, required
+    A text file which will contain names of all samples which pass the filters
+
+    file: string, required
+    A string of the filename of the ani output, the matrix file
+
+    ani: int, default = 95
+    An integer of the cutoff value at which to remove samples if they are under this number compared to the reference
+
+    reference: string, required
+    The name of the reference sample as it appears in the ani matrix file
+
+    Returns
+    ----------
+    sample_pass: list
+    The samples that passed the filters at this step returned as a list
+
+    sample_fail: dataframe
+    The samples that failed the filtes at this step returned as a dataframe which contain information about why they failed
     """
+    
     # Reads the ani text file
     df = pd.read_csv(file, sep='\t', header=0, index_col=0)
     df = df.fillna(value = 0)
     # Filter dataframe based off first column, select sample
     # Only add samples to the list if they are above 95% in the third column 
     df_pass = df[df[reference] >= ani]
-    df_fail = df.loc[df[reference] < ani, reference]
+    sample_fail = df.loc[df[reference] < ani, reference]
     # Add the samples from the second column to the list
     # Return the list of samples by APPENDING TO LIST 
     sample_list = list(df_pass.index)
     sample_list = [*set(sample_list)]
-    return sample_list, df_fail
+    return sample_list, sample_fail
 
 if __name__ == "__main__":
     sample_list, checkm_list, ani_list = [], [], []

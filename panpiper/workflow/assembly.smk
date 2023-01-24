@@ -11,13 +11,8 @@ import distutils.util
 
 OUT = config['out']
 FASTQ = config['fastq']
-PARAMS = config['params']
 ASSEMBLY_OUT = os.path.join(OUT, 'complete_assembly_files.txt')
 (READS,) = glob_wildcards(os.path.join(FASTQ,"{file}_2.fastq"))
-
-with open(PARAMS, 'r') as fh:   
-    fl = [x.strip().split() for x in fh.readlines()]
-param_dict = {x[0]: x[1] for x in fl}
 
 rule all:
     input:
@@ -25,8 +20,7 @@ rule all:
 
 
 # Assembly with shovill https://github.com/tseemann/shovill
-## Includes trimming and error correction
-## nocorr just doesn't do pilon, it will still filter low coverage or small contig size --nocorr
+# Time: 5-40 minutes per sample
 rule shovill:
     input:
         read1=os.path.join(FASTQ, '{file}_1.fastq'),

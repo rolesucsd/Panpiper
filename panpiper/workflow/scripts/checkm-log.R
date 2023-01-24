@@ -1,12 +1,20 @@
 #################
-# Check.R- program to load checkM results from one file and graph
-# Author- Renee Oles
-# Date- 7/2/2021
+# Title: checkm-log.R
+# Author: Renee Oles
+# Purpose: R Script to summarize the paths from the graph.py program
+# Input: 
+#   out_pref: string, required
+#     A string of the file prefix for the output files
+# Output: 
+#   A data-frame, wide-format file, of each sample and summary of assembly details include completeness and contamination from log CheckM output
+# TODO: remove hard-coding
 ################
+
 require(tidyverse)
 
 args <- commandArgs(trailingOnly = TRUE)
 #meta <- "metadata/groups.txt"
+# 
 out_pref <- gsub("Quality.*", "", args[1])
 output <- paste(out_pref,"Quality/CheckM/checkm_log",sep="")
 
@@ -25,7 +33,7 @@ processFile = function(input) {
           break
         }
         if(!grepl("Bin",line) && !grepl("---",line) & !grepl("\\[",line)){
-          input <- gsub("../Assembly/Shovill/","",input)
+          input <- gsub("*Quality/Assembly_filter/","",input)
           input <- gsub("/lineage.log","",input)
           line <- gsub("filter", input, line)
           write(line, file=paste(output,".txt",sep=""), append=TRUE)

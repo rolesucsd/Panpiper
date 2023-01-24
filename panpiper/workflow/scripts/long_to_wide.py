@@ -1,7 +1,3 @@
-'''============================================================================================
-Renee Oles      9 Nov 2021
-============================================================================================'''
-
 import sys
 import os
 import numpy as np
@@ -9,7 +5,19 @@ import pandas as pd
 
 def long_to_wide(file, output, path=""):
     """
-    Open the text file and convert format from long to wide (matrix)
+    Open the text file and convert format from long to wide (matrix). Writes the output to the file specified.
+
+    Parameters 
+    ----------
+    file: string, required
+        The filename of the file read in 
+
+    output: string, required
+        The filename of the desired output
+
+    path: string
+        The full path of the file
+
     """
     # Reads the ani text file
     df = pd.read_csv(file, sep='\t', names=["Reference","Sample","PercentIdentity","Contig1","Contig2"])

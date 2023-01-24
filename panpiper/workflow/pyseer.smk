@@ -1,9 +1,14 @@
-# CHECKPOINT #
+# ----------------------------------------------------------------------------
+# Copyright (c) 2022--, Panpiper development team.
+#
+# Distributed under the terms of the Modified BSD License.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+# ----------------------------------------------------------------------------
+
 """
 Authors: Renee Oles
-Date Updated: 1/4/2022
 Purpose: Genome-wide association study
-
 TODO:
 - make sure you have constructed phenotypes as either binary (needs to be 1 or 0) or continuous
 - see if there is a way to include multiple phenotypes together
@@ -31,13 +36,13 @@ param_dict = {x[0]: x[1] for x in fl}
 
 rule all:
     input:
-        ("growth/COG_analysis.txt"),
-        ("growth/unitig_gene_hits.txt"),
-        ("growth/struct_analysis.txt"),
-        ("growth/unitig_gene_hits_enet.txt")
+        os.path.join(OUT,"Pyseer/COG_analysis.txt"),
+        os.path.join(OUT,"Pyseer/unitig_gene_hits.txt"),
+        os.path.join(OUT,"Pyseer/struct_analysis.txt"),
+        os.path.join(OUT,"Pyseer/unitig_gene_hits_enet.txt"),
 
 # We will use the distances from the core genome phylogeny, which has been midpointed rooted:
-# TO DO: Has the tree been midpoint rooted though????? 
+# TODO: check root of tree
 rule pyseer_SNP_to_matrix:
     input:
         SNP
@@ -68,9 +73,8 @@ rule pyseer_structure_analysis:
         roary=STRUCTURE,
         phylo=os.path.join(OUT,"Pyseer/phylogeny_similarity.tsv"),
     params:
-        pheno_col=param_dict["pheno"],
-        pheno=param_dict["meta"],
-        dimensions=2
+        pheno_col=param_dict["pheno_column"],
+        pheno=param_dict["pheno_file"],
     conda:
         "envs/pyseer.yml"  
     output:
@@ -82,11 +86,9 @@ rule pyseer_unitig:
     input:
         phylo=os.path.join(OUT,"Pyseer/phylogeny_similarity.tsv"),
         unitig=UNITIG,
-        phylo_dist="full/phylogeny_distance.tsv"
     params:
-        pheno=param_dict["meta"],
-        pheno_col=param_dict["pheno"],
-        cov_col=param_dict["cov"]
+        pheno_col=param_dict["pheno_column"],
+        pheno=param_dict["pheno_file"],
     conda:
         "envs/pyseer.yml"
     output:
@@ -144,9 +146,8 @@ rule pyseer_elastic_net:
     input:
         unitig=os.path.join(OUT,"Pyseer/unitig.pyseer.gz"),
     params:
-        pheno=param_dict["meta"],
-        pheno_col=param_dict["pheno"],
-        cov_col=param_dict["cov"]
+        pheno_col=param_dict["pheno_column"],
+        pheno=param_dict["pheno_file"],
     conda:
         "envs/pyseer.yml"
     output:

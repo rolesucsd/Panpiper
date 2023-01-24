@@ -1,7 +1,8 @@
-name: kraken
+name: bakta
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - kraken2=2.1.2
+  - bakta=1.6.1
+  - biopython=1.80

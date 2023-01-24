@@ -1,7 +1,3 @@
-'''============================================================================================
-Renee Oles      9 Nov 2021
-============================================================================================'''
-
 import sys
 import os
 import numpy as np
@@ -9,7 +5,7 @@ import pandas as pd
 
 def csv_to_tab(file, output, path=""):
     """
-    Open the text file and convert format)
+    Open the text file and convert format
     """
     # Reads the ani text file
     df = pd.read_csv(file)

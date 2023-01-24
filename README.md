@@ -15,6 +15,9 @@ This package conducts bacterial isolate analysis for one species.
     * The samples are divided into phylogroups with [PopPUNK](https://github.com/bacpop/PopPUNK)
 * Genome-wide association study
     * The pangenome is used with a continuous or binary phenotype to conduct a genome-wide association study with [Pyseer](https://github.com/mgalardini/pyseer)
+    * The wrapper scripts used to analyze and filter the data are predominantly taken from the pyseer package.
+
+Note: Be sure to cite all packages used in the pipeline. 
 
 ## Installation
 
@@ -36,6 +39,8 @@ panpiper ... --kraken_dir {directory} --eggnog_dir {directory}
 
 ## Workflow
 
+Note: The first time these functions are run, they will take a couple minutes before the workflow starts running because the conda dependendies need to be downloaded before start.
+
 ### Assembly: 
 The fastq files should all be in a single directory. They need to be paired-end. 
 
@@ -55,6 +60,13 @@ The fasta file directory should contain a subdirectory for each sample where the
 
 ```sh
 panpiper -w pangenome  -o {ouput directory} -a {fasta directory} -s  {sample list} -r {reference fasta file}
+```
+
+### Genome-wide association study: 
+
+
+```sh
+panpiper -w pyseer  -o {ouput directory} -g {gene presence absence file} -p {structure presence absence file} -u {unitig file} -t {tree file from iqtree} -r {reference fasta file}
 ```
 
 

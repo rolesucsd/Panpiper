@@ -32,7 +32,8 @@ rule all:
         os.path.join(OUT,"Pangenome/Summary/db_clusters.csv"),
         os.path.join(OUT,"Pangenome/Summary/core_gene_alignment.aln.iqtree"),
         os.path.join(OUT,"Pangenome/Summary/eggnog.txt"),
-        os.path.join(OUT,"Pangenome/Summary/kraken_ag.txt")
+        os.path.join(OUT,"Pangenome/Summary/kraken_ag.txt"),
+        os.path.join(OUT,"Pangenome/Unitig/unitig.pyseer"),
 
 
 # Set up files for downstream analysis
@@ -56,24 +57,24 @@ rule setup:
         """
 
 
-# Prokka will annotate individual assemblies and prepare them for pangenome construction
-# Time requirement: between 5 and 10 minutes
-rule prokka_multiple:
+# Bakta will annotate individual assemblies and prepare them for pangenome construction
+rule bakta_multiple:
     input:
         gen=os.path.join(FASTA,"{file}/{file}.fna"),
     params:
+        db=params_dict["bakta_dir"],
         name="{file}",
-        outdir=os.path.join(OUT,"Pangenome/Prokka/{file}"),
+        outdir=os.path.join(OUT,"Pangenome/Bakta/{file}"),
     conda:
-        "envs/prokka.yml"
+        "envs/bakta.yml"
     log:
         os.path.join(OUT,"report/prokka_{file}.log"),
     output:
-        gen=os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.gff"),
-        faa=os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.faa"),
-        fna=os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.fna"),
+        gen=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff"),
+        faa=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.faa"),
+        fna=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.fna"),
     shell:
-        "prokka --mincontiglen 500 --centre X --compliant --kingdom Bacteria --outdir {params.outdir} --prefix {params.name} --locustag {params.name} --force {input} --addgenes &> {log}"
+        "bakta --db {params.db} --output {params.outdir} --prefix {params.name} --locustag {params.name} {input} &> {log}"
 
 
 # Panaroo is an updated version of Roary to create a pangenome
@@ -99,19 +100,21 @@ rule prokka_pan:
     input:
         gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
     params:
+        db=params_dict["bakta_dir"],
         name="pan_genome_reference",
         outdir=os.path.join(OUT,"Pangenome/Summary/"),
     conda:
-        "envs/prokka.yml"
+        "envs/bakta.yml"
     log:
-        os.path.join(OUT,"report/prokka_pan.log"),
+        os.path.join(OUT,"report/bakta_pan.log"),
     output:
         gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.gff"),
         faa=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.faa"),
         fna=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fna"),
     shell:
-        "prokka --mincontiglen 500 --centre X --compliant --kingdom Bacteria --outdir {params.outdir} --prefix {params.name} --locustag {params.name} --force {input} --addgenes &> {log}"
+        "bakta --db {params.db} --output {params.outdir} --prefix {params.name} {input} &> {log}"
 
+# Insert bakta pan (there is a bakta protein version that can annotate the pangenome)
 
 # The pangenome is indexed 
 rule bwa_index_pan:
@@ -291,7 +294,7 @@ rule eggnog_mapper:
         protein=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.faa"),
     params:
         outdir=os.path.join(OUT,"Pangenome/Summary"),
-        db="panpiper/databases/eggnog",
+        db=param_dict['eggnog_dir'],
     conda:
         "envs/eggnog.yml"
     log:
@@ -307,7 +310,7 @@ rule kraken:
     input:
         os.path.join(FASTA, "{file}/{file}.fna"),
     params:
-        db="databases/kraken"
+        db=params_dict["kraken_dir"]
     conda:
         "envs/kraken.yml"
     log:
@@ -334,6 +337,22 @@ rule kraken_report:
         report=os.path.join(OUT,"Pangenome/Summary/kraken_ag.txt")
     shell:
         """
-        kraken2 --db {params.db} --output {output.out} --threads 20 --use-names --report {output.report} --use-mpa-style {input} &> {log}
+        Rscript scripts/kraken.R {input} {output}
         """
 
+# Unitig caller will create unitigs which is a kmer alternative (read about why using it in gwas is better or worse)
+# In future note that you can use fastq or fasta or both see commented out line of code for other use
+# Time: 25 minutes for 571 files 
+rule unitig:
+    input:
+        os.path.join(OUT,"Pangenome/Unitig/unitig.list"),
+    params:
+        os.path.join(OUT,"Pangenome/Unitig/unitig"),
+    conda:
+        "envs/unitig.yml"
+    log:
+        os.path.join(OUT,"report/unitig.log"),
+    output:
+        os.path.join(OUT,"Pangenome/Unitig/unitig.pyseer"),
+    shell:
+        "unitig-caller --call --reads {input} --out {params}"

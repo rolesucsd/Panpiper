@@ -1,7 +1,8 @@
-name: kraken
+name: unitig
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - kraken2=2.1.2
+  - unitig-caller=1.2.0
+  - unitig-counter=1.1.0

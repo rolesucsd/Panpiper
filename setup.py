@@ -16,7 +16,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="panpiper", 
     version="0.1.1",
-    license='BSD-3-Clause'
+    license='BSD-3-Clause',
     author="Renee Oles",
     author_email="roles@health.ucsd.edu",
     description="Panpiper: snakemake workflow for bacterial isolate analysis",
