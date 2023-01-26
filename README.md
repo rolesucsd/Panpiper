@@ -19,6 +19,8 @@ This package conducts bacterial isolate analysis for one species.
 
 Note: Be sure to cite all packages used in the pipeline. 
 
+![Workflow Diagram](workflow.png)
+
 ## Installation
 
 Create package and install dependencies 
@@ -34,7 +36,7 @@ Download databases
 * The databses necessary will be downloaded automatically except in the case of Kraken2 and EggNOG-mapper. These databases have already been downloaded and are maintained in the package structure. In the case that you would like to use your own database, these databases can be downloaded into user-defined directories and can be referenced in the arguments as follows
 
 ```sh
-panpiper ... --kraken_dir {directory} --eggnog_dir {directory}
+panpiper ... --kraken_dir {directory} --eggnog_dir {directory} --bakta_dir {directory}
 ```
 
 ## Workflow
