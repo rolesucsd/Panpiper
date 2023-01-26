@@ -15,8 +15,6 @@ import logging
 import glob
 import shlex, subprocess
 
-from panpiper.messages import Message
-
 class Workflow(object):
 
     def __init__(self, obj):
@@ -24,6 +22,18 @@ class Workflow(object):
             setattr(self, key, val)
 
     def run(self, snakefile):
+    """
+    Construct the snakemake command based off user-defined parameters
+    Will produce a command, cmd, which will be launched
+
+    Parameters 
+    ----------
+    self: object, required
+    Contains the parameters defined by the user
+
+    snakefile: string, required
+    The snakefile selected for the desired operation
+    """
 
         # Start message instance
         messages = Message(self)
@@ -66,8 +76,6 @@ class Workflow(object):
         if self.cluster_type == 'qsub' or  self.cluster_type == 'slurm':
             
             cluster_cmd = ['--cluster-config', self.cluster_config]
-#            cluster_cmd += ['--cluster-status slurm-status.py']
-#            cluster_cmd += [' -e ' + self.output + 'report/cluster_err' + ' -o ' + self.output + 'report/cluster_out']
             cluster_args_mod = '"' + self.cluster_args + '"'
             cluster_cmd += [' --cluster ', cluster_args_mod]
             # Final snakemake command
@@ -101,9 +109,6 @@ class Workflow(object):
                 logging.error(line.strip())
             logging.error('Snakemake returncode: '+str(process.returncode))
             sys.exit()
-
-        # Save information on what has been run
-        messages.add(snakefile) 
 
         # If unlocking exit program
         if self.unlock:

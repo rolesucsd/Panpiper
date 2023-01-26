@@ -1,4 +1,11 @@
-#################
+# ----------------------------------------------------------------------------
+# Copyright (c) 2022--, Panpiper development team.
+#
+# Distributed under the terms of the Modified BSD License.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+# ----------------------------------------------------------------------------
+
 # Title: AMR.R
 # Author: Renee Oles
 # Purpose: R Script to summarize the paths from the graph.py program
@@ -10,7 +17,7 @@
 # Output: 
 # 		A matrix, wide-format file, of each sample and whether (1) or not (0) it has the given amr gene
 #		A heatmap, png file file, of the presence/absence of the amr genes per sample
-################
+
 
 # Libraries
 library(tidyverse)
@@ -39,7 +46,7 @@ write.table(amr_wide,output,quote=F,row.names = T,sep="\t")
 amr_wide_edit <-  amr_wide[, colSums(amr_wide != 0) > 10]
 amr_wide_edit    <- amr_wide_edit[,order(colnames(amr_wide_edit))]
 
-# Create heatmpa
+# Create heatmap
 png(filename=output, units="in", width=7, height=15, res=300)
 pheatmap(amr_wide_edit, fontsize_row=1, color=colorRampPalette(c("white", "red"))(50), cluster_cols = FALSE)
 dev.off()

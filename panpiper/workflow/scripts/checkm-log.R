@@ -1,4 +1,10 @@
-#################
+# ----------------------------------------------------------------------------
+# Copyright (c) 2022--, Panpiper development team.
+#
+# Distributed under the terms of the Modified BSD License.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+# ----------------------------------------------------------------------------
 # Title: checkm-log.R
 # Author: Renee Oles
 # Purpose: R Script to summarize the paths from the graph.py program
@@ -8,7 +14,6 @@
 # Output: 
 #   A data-frame, wide-format file, of each sample and summary of assembly details include completeness and contamination from log CheckM output
 # TODO: remove hard-coding
-################
 
 require(tidyverse)
 

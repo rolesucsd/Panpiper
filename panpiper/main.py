@@ -77,6 +77,7 @@ def cli():
     app.add_argument('--n50', help='N50 cutoff', default = 5000, type=int)
     app.add_argument('--eggnog_dir', help='Path to the eggnog database directory', default = "panpiper/databases/eggnog", type=str)
     app.add_argument('--kraken_dir', help='Path to the kraken2 database directory', default = "panpiper/databases/kraken", type=str)
+    app.add_argument('--bakta_dir', help='Path to the batka database directory', default = "panpiper/databases/batka", type=str)
     app.add_argument('--pheno_column', help='The column in the phenotype file to use for the association study', default = 1, type=int)
     app.add_argument('--pheno_file', help='The filename and full path of the phenotype file', default = "skip", type=str)
 
@@ -110,7 +111,7 @@ def cli():
         logging.info('The parameters used in this study are- Eggnog Database Directory:' +master.eggnog_dir+ ', Kraken Database Directory:' +master.kraken_dir)
         wf.run(snakefile=WORKFLOW_PANGENOME)
 
-    # If workflow is set to Pangenome
+    # If workflow is set to Pyseer
     elif (master.workflow  == "pyseer"):
         logging.info('Run genome-wide association study')
         logging.info('The parameters used in this study are- Phenotype file:' +master.pheno_file+ ', Phenotype column:' +master.pheno_column)

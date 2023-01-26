@@ -1,9 +1,14 @@
-#################
+# ----------------------------------------------------------------------------
+# Copyright (c) 2022--, Panpiper development team.
+#
+# Distributed under the terms of the Modified BSD License.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+# ----------------------------------------------------------------------------
 # Title: checkm_bin-stats.R- program to load checkM results from one file and graph
 # Author- Renee Oles
 # Purpose: R Script to read the CheckM results: bin_stats.analyze.tsv and concatenated.tre
-# Date- 11/12/2021
-################
+
 require(tidyverse)
 
 args <- commandArgs(trailingOnly = TRUE)
