@@ -19,6 +19,8 @@ This package conducts bacterial isolate analysis for one species.
 
 Note: Be sure to cite all packages used in the pipeline. 
 
+![Workflow Diagram](workflow.png)
+
 ## Installation
 
 Create package and install dependencies 
