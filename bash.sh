@@ -17,8 +17,12 @@ conda activate panpiper
 
 #bakta_db download --output /panfs/roles/Panpiper/panpiper/databases/bakta
 
-panpiper -o /panfs/roles/BF --unlock 
-panpiper -o /panfs/roles/BF -q /panfs/roles/Isolates/Reference/All -w assembly --cluster_type slurm --cluster_config cluster.json --cluster_args "sbatch -A {cluster.account} --mem {cluster.mem} -t {cluster.time} --cpus-per-task {cluster.cpus}"
+#panpiper -o /panfs/roles/BF --unlock 
+#panpiper -o /panfs/roles/BF -q /panfs/roles/Isolates/Reference/All --log_lvl DEBUG -w assembly --cluster_type slurm --cluster_config cluster.json --cluster_args "sbatch -A {cluster.account} --mem {cluster.mem} -t {cluster.time} --cpus-per-task {cluster.cpus}"
 
-#panpiper -o /panfs/roles/Package_test -a /panfs/roles/Package_test/Assembly -s  /panfs/roles/Package_test/Assembly/complete_assembly_files.txt -r /panfs/roles/Package_test/reference/9343.fna -w quality
-#panpiper -o /panfs/roles/Package_test -a /panfs/roles/Package_test/Quality/Assembly_filter -s  /panfs/roles/Package_test/Quality/sample_list.txt -r /panfs/roles/Package_test/reference/9343.fna -w pangenome 
+panpiper -o /panfs/roles/BF --log_lvl DEBUG -a /panfs/roles/BF/Assembly -s  /panfs/roles/BF/Assembly/complete_assembly_files.txt -r /panfs/roles/BF/reference/9343.fna -w quality --cluster_type slurm --cluster_config cluster.json --cluster_args "sbatch -A {cluster.account} --mem {cluster.mem} -t {cluster.time} --cpus-per-task {cluster.cpus}"
+#panpiper -o /panfs/roles/BF --log_lvl DEBUG -a /panfs/roles/BF/Quality/Assembly_filter -s  /panfs/roles/BF/Quality/sample_list.txt -r /panfs/roles/Package_test/reference/9343.fna -w pangenome --cluster_type slurm --cluster_config cluster.json --cluster_args "sbatch -A {cluster.account} --mem {cluster.mem} -t {cluster.time} --cpus-per-task {cluster.cpus}"
+
+# TODO: Assembly - some assemblies get stuck in shovill
+# TODO: Assembly - can't find move_files.sh???? 
+# TODO: Quality - I don't include completeness and contamination at the moment 

@@ -32,6 +32,7 @@ class Workflow(object):
         # need to edit j
         cmd = ['snakemake',
                '--use-conda',
+               '--verbose',
                '--latency-wait', '20',
                '--scheduler', 'greedy',
                '--rerun-incomplete',

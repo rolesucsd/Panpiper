@@ -8,3 +8,6 @@ conda_build/
 databases/
 .DS_Store
 slurm*
+bash.sh
+assembly_slurm/
+quality_slurm/

@@ -51,7 +51,7 @@ rule pyseer_SNP_to_matrix:
     output:
         os.path.join(OUT,"Pyseer/phylogeny_similarity.tsv"),
     shell:
-        "python scripts/phylogeny_distance.py --lmm {input} > {output}"
+        "python panpiper/workflow/scripts/phylogeny_distance.py --lmm {input} > {output}"
 
 # TODO: May want to include covariates 
 rule pyseer_COG_analysis:
@@ -105,7 +105,7 @@ rule pyseer_patterns_unitig:
     output:
         os.path.join(OUT,"Pyseer/unitig_pattern_count.txt"),
     shell:
-        "python scripts/count_patterns.py {input} > {output}"
+        "python panpiper/workflow/scripts/count_patterns.py {input} > {output}"
 
 
 rule pyseer_filter_unitig:
@@ -117,7 +117,7 @@ rule pyseer_filter_unitig:
     output:
         os.path.join(OUT,"Pyseer/significant_unitig.txt"),
     shell:
-        "Rscript scripts/filter_kmers.R {input.nxt} {output}"
+        "Rscript panpiper/workflow/scripts/filter_kmers.R {input.nxt} {output}"
 
 
 rule annotate_unitig:
@@ -140,7 +140,7 @@ rule unitig_gene:
     output:
        os.path.join(OUT,"Pyseer/unitig_gene_hits.txt"),
     shell:
-        "python scripts/summarise_annotations.py {input} > {output}"
+        "python panpiper/workflow/scripts/summarise_annotations.py {input} > {output}"
 
 rule pyseer_elastic_net:
     input:
@@ -164,7 +164,7 @@ rule pyseer_filter_unitig_elastic_net:
         unitig=os.path.join(OUT,"Pyseer/significant_unitig_enet.txt"),
     shell:
         """
-        Rscript scripts/filter_kmers.R {input.nxt} {output}
+        Rscript panpiper/workflow/scripts/filter_kmers.R {input.nxt} {output}
         """
 
 rule annotate_unitig_elastic_net:
@@ -187,6 +187,6 @@ rule unitig_gene_elastic_net:
     output:
         os.path.join(OUT,"Pyseer/unitig_gene_hits_enet.txt"),
     shell:
-        "python scripts/summarise_annotations.py {input} > {output}"
+        "python panpiper/workflow/scripts/summarise_annotations.py {input} > {output}"
 
 

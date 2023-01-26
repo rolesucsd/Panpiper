@@ -51,18 +51,11 @@ class Controller(object):
             if(self.workflow == "assembly"):
                 self.check_fastq()
             elif(self.workflow == "quality"):
-                try:
-                    self.check_reference()
-                    self.check_sample()
-                except Exception:
-                    logging.error('Must provide reference file and sample list')                    
-                    sys.exit()
+                self.check_reference()
+                self.check_list()
             elif(self.workflow == "pangenome"):
-                try:
-                    self.check_sample()
-                except Exception:
-                    logging.error('Must provide a sample list')
-                    sys.exit()
+                self.check_list()
+                self.check_reference()
 
         self.write_params(args)
 
@@ -148,13 +141,7 @@ class Controller(object):
         
         with open(self.sample_list, 'r') as fh:
             for line in fh:
-                if os.path.join(self.fasta, line, ".fasta"):
-                    print('Fasta file found')
-                elif os.path.join(self.fasta, line, ".fna"):
-                    print('Fasta file found')
-                elif os.path.join(self.fasta, line, ".fa"):
-                    print('Fasta file found')
-                else:
+                if not os.path.join(self.fasta, line, ".fa"):
                     logging.error('Sample names not present in fasta directory')
                     sys.exit()
 

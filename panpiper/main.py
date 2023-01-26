@@ -78,7 +78,7 @@ def cli():
     app.add_argument('--eggnog_dir', help='Path to the eggnog database directory', default = "panpiper/databases/eggnog", type=str)
     app.add_argument('--kraken_dir', help='Path to the kraken2 database directory', default = "panpiper/databases/kraken", type=str)
     app.add_argument('--pheno_column', help='The column in the phenotype file to use for the association study', default = 1, type=int)
-    app.add_argument('--pheno_file', help='The filename and full path of the phenotype file', default = "", type=str)
+    app.add_argument('--pheno_file', help='The filename and full path of the phenotype file', default = "skip", type=str)
 
     ########## Workflow ##########
     master = Controller(ap)
@@ -100,20 +100,20 @@ def cli():
     elif (master.workflow == "quality"):
         # Quality control
         logging.info('Run quality control for assembly quality and taxonomy verification')
-        logging.info('The parameters used in this study are:\nGC:' +master.gc+ '\nGenome Size:' +master.genome_size+ '\nReference:' +master.ref+ 
-            '\nANI Cutoff:' +master.ani_cutoff+ '\nContig Number:' +master.contig_number+ '\nN50:' +master.n50)
+        logging.info('The parameters used in this study are- GC:' +str(master.gc)+ ', Genome Size:' +str(master.genome_size)+ ', Reference:' +master.ref+ 
+            ', ANI Cutoff:' +str(master.ani_cutoff)+ ', Contig Number:' +str(master.contig_number)+ ', N50:' +str(master.n50))
         wf.run(snakefile=WORKFLOW_QUALITY)
     
     # If workflow is set to Pangenome
     elif (master.workflow  == "pangenome"):
         logging.info('Run pangenome creation and analysis')
-        logging.info('The parameters used in this study are:\nEggnog Database Directory:' +master.eggnog_dir+ '\n Kraken Database Directory:' +master.kraken_dir)
+        logging.info('The parameters used in this study are- Eggnog Database Directory:' +master.eggnog_dir+ ', Kraken Database Directory:' +master.kraken_dir)
         wf.run(snakefile=WORKFLOW_PANGENOME)
 
     # If workflow is set to Pangenome
     elif (master.workflow  == "pyseer"):
         logging.info('Run genome-wide association study')
-        logging.info('The parameters used in this study are:\nPhenotype file:' +master.pheno_file+ '\nPhenotype column:' +master.pheno_column)
+        logging.info('The parameters used in this study are- Phenotype file:' +master.pheno_file+ ', Phenotype column:' +master.pheno_column)
         wf.run(snakefile=WORKFLOW_PYSEER)
 
 if __name__ == '__main__':

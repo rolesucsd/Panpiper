@@ -51,8 +51,8 @@ rule setup:
         os.path.join(OUT,"Pangenome/Phylogroups/poppunk.list"),
     shell:
         """
-        chmod u+x scripts/setup.sh
-        scripts/setup.sh {input} {params} &> {log}
+        chmod u+x panpiper/workflow/scripts/setup.sh
+        panpiper/workflow/scripts/setup.sh {input} {params} &> {log}
         amrfinder -u
         """
 
@@ -218,7 +218,7 @@ rule concat_amr:
     output:
         os.path.join(OUT,"Pangenome/Summary/AMR.txt"),
     shell:
-        "python scripts/concat_amrfinder.py -i {input} -o {output} &> {log}"
+        "python panpiper/workflow/scripts/concat_amrfinder.py -i {input} -o {output} &> {log}"
 
 
 # Summarize antibiotic resistance accross all files
@@ -234,7 +234,7 @@ rule graph_amr:
     output:
         os.path.join(OUT,"Pangenome/Summary/amr.png"),
     shell:
-        "Rscript scripts/AMR_heatmap.R -i {input} -o {params} &> {log}"
+        "Rscript panpiper/workflow/scripts/AMR_heatmap.R -i {input} -o {params} &> {log}"
 
 
 # Work on phylogroup division using Poppunk
@@ -337,7 +337,7 @@ rule kraken_report:
         report=os.path.join(OUT,"Pangenome/Summary/kraken_ag.txt")
     shell:
         """
-        Rscript scripts/kraken.R {input} {output}
+        Rscript panpiper/workflow/scripts/kraken.R {input} {output}
         """
 
 # Unitig caller will create unitigs which is a kmer alternative (read about why using it in gwas is better or worse)

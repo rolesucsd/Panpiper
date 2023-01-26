@@ -26,8 +26,6 @@ PARAMS_REF = param_dict["ref"]
 ANI_CUTOFF = param_dict["ani_cutoff"]
 CONTIG_NUMBER = param_dict["contig_number"]
 N50 = param_dict["n50"]
-L50 = param_dict["l50"]
-STRAIN_HET = param_dict["strain_het"]
 
 def read_complete_files():
     with open(SAMPLE_LIST) as f:
@@ -52,6 +50,8 @@ rule contig_filter:
         "envs/bbmap.yml"
     log:
         os.path.join(OUT,"report/prokka_filter_{file}.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/prokka_filter_{file}.benchmark"),    
     output:
         fna=os.path.join(OUT,"Quality/Assembly_filter/{file}/{file}.fna"),
     shell:
@@ -92,8 +92,8 @@ rule checkm_to_graph:
         os.path.join(OUT,"report/checkm_graph.log"),
     shell:
         """
-        Rscript scripts/checkm-log.R {params.log}  &> {log}
-        Rscript scripts/checkm_bin-stats.R {input.stats}  &> {log}
+        Rscript panpiper/workflow/scripts/checkm-log.R {params.log}  &> {log}
+        Rscript panpiper/workflow/scripts/checkm_bin-stats.R {input.stats}  &> {log}
         """
 
 
@@ -108,8 +108,8 @@ rule fastani_list_create:
         os.path.join(OUT,"report/fastani_list_create.log"),
     shell:
         """
-        chmod u+x scripts/create_list.sh
-        scripts/create_list.sh {input} {params} {output} &> {log}
+        chmod u+x panpiper/workflow/scripts/create_list.sh
+        panpiper/workflow/scripts/create_list.sh {input} {params} {output} &> {log}
         """
 
 
@@ -134,7 +134,7 @@ rule fastani_long_to_wide:
     log:
         os.path.join(OUT,"report/fastani_long_to_wide.log"),
     shell:
-        "python scripts/long_to_wide.py {input} {output.txt} &> {log}"
+        "python panpiper/workflow/scripts/long_to_wide.py {input} {output.txt} &> {log}"
 
 
 # Filter files based off user-defined rules
@@ -152,15 +152,13 @@ rule filter_files:
         ac=ANI_CUTOFF,
         cn=CONTIG_NUMBER,
         n=N50,
-        lf=L50,
-        sh=STRAIN_HET,
     log:
         os.path.join(OUT,"report/filter_files.log"),
     output:
         os.path.join(OUT,"Quality/sample_list.txt"),
     shell:
         """
-        python scripts/filter_isolates.py -o {params.outpath} -a {input.ani} -l {params.checkm} -s {input.stat} -r {params.ref} -gc {params.gc} -g {params.genome_size} -ac {params.ac} -cn {params.cn} -n {params.n} -lf {params.lf} &> {log}
+        python panpiper/workflow/scripts/filter_isolates.py -o {params.outpath} -a {input.ani} -l {params.checkm} -s {input.stat} -r {params.ref} -gc {params.gc} -g {params.genome_size} -ac {params.ac} -cn {params.cn} -n {params.n} &> {log}
         """
 
 rule print_results:
@@ -178,6 +176,6 @@ rule print_results:
     output:
         SAMPLES_OUT,
     shell:
-        "Rscript -e \"rmarkdown::render('scripts/quality_report.Rmd', params=list(checkm = '{input.stat}', log = '{input.log}', ani = '{input.ani}', passed = '{input.passed}', ref = '{params.ref}'))\" &> {log}"
+        "Rscript -e \"rmarkdown::render('panpiper/workflow/scripts/quality_report.Rmd', params=list(checkm = '{input.stat}', log = '{input.log}', ani = '{input.ani}', passed = '{input.passed}', ref = '{params.ref}'))\" &> {log}"
 
 

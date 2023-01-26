@@ -11,7 +11,7 @@ import distutils.util
 
 OUT = config['out']
 FASTQ = config['fastq']
-ASSEMBLY_OUT = os.path.join(OUT, 'complete_assembly_files.txt')
+ASSEMBLY_OUT = os.path.join(OUT, 'Assembly/complete_assembly_files.txt')
 (READS,) = glob_wildcards(os.path.join(FASTQ,"{file}_2.fastq"))
 
 rule all:
@@ -51,6 +51,6 @@ rule move_complete:
         ASSEMBLY_OUT,
     shell:
         """
-        chmod u+x scripts/move_files.sh
-        scripts/move_files.sh {params} &> {log}
+        chmod u+x panpiper/workflow/scripts/move_files.sh
+        panpiper/workflow/scripts/move_files.sh {params} &> {log}
         """
