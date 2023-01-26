@@ -23,7 +23,7 @@ library(plotly)
 ```{r,  include=FALSE}
 checkm <- read.delim(params$checkm, check.names = FALSE)
 log <- read.delim(params$log)
-ani <- read.delim(params$ani, check.names = FALSE, row.names = 1)
+ani <- read.delim(params$ani, check.names = FALSE\)
 passed <- as.data.frame(read.delim(params$passed,col.names = "Sample", header=FALSE))
 ref <- params$ref
 ```
@@ -150,17 +150,6 @@ p<-ggplot(checkm, aes(y=`Mean contig length`, x=Sample, fill=Passed))+
   theme(axis.text.x = element_text(angle=90, hjust=1))+
   scale_fill_manual(values=c("yes"="#62b587","no"="grey"))
 ggplotly(p)
-```
-
-# ANI 
-This figure is a heatmap of average nucleotide identity all against all. The highlighted sample is the reference.
-```{r, out.width="100%", out.height="100%"}
-Reference <- params$ref
-group <- data.frame(Reference=rownames(ani), row.names = rownames(ani))
-group[group$Reference %in% ref,1] <- 1
-group[group$Reference != 1,] <- 0
-group_cols = list(Reference= c("1"="black", "0"="white"))
-pheatmap(ani, annotation_row=group,annotation_colors=group_cols[1],color=colorRampPalette(c("white", "red"))(100), cluster_cols = FALSE)
 ```
 
 ## Statistic tables

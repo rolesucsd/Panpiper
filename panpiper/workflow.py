@@ -22,22 +22,18 @@ class Workflow(object):
             setattr(self, key, val)
 
     def run(self, snakefile):
-    """
-    Construct the snakemake command based off user-defined parameters
-    Will produce a command, cmd, which will be launched
-
-    Parameters 
-    ----------
-    self: object, required
-    Contains the parameters defined by the user
-
-    snakefile: string, required
-    The snakefile selected for the desired operation
-    """
-
-        # Start message instance
-        messages = Message(self)
-
+        """
+        Construct the snakemake command based off user-defined parameters
+        Will produce a command, cmd, which will be launched
+        
+        Parameters 
+        ----------
+        self: object, required
+        Contains the parameters defined by the user
+        
+        snakefile: string, required
+        The snakefile selected for the desired operation
+        """
         # Define core snakemake command
         # need to edit j
         cmd = ['snakemake',

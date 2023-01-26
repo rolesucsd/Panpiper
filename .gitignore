@@ -1,5 +1,5 @@
 __pycache__/
-*.egg-info/
+panpiper.egg-info/
 dist/
 build/
 test/

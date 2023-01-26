@@ -62,13 +62,13 @@ rule bakta_multiple:
     input:
         gen=os.path.join(FASTA,"{file}/{file}.fna"),
     params:
-        db=params_dict["bakta_dir"],
+        db=param_dict["bakta_dir"],
         name="{file}",
         outdir=os.path.join(OUT,"Pangenome/Bakta/{file}"),
     conda:
         "envs/bakta.yml"
     log:
-        os.path.join(OUT,"report/prokka_{file}.log"),
+        os.path.join(OUT,"report/bakta_{file}.log"),
     output:
         gen=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff"),
         faa=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.faa"),
@@ -81,7 +81,7 @@ rule bakta_multiple:
 # 1 hour for 100 samples, scales linearlly
 rule panaroo:
     input:
-        gen=expand(os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.gff"), file=filtered),
+        gen=expand(os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff"), file=filtered),
     params:
         os.path.join(OUT,"Pangenome/Panaroo"),
     log:
@@ -95,12 +95,12 @@ rule panaroo:
         "panaroo -i {input} -o {params} --remove-invalid-genes --clean-mode strict -a core --core_threshold 0.98 --len_dif_percent 0.98 -f 0.7 --merge_paralogs -t 20 &> {log}"
 
 
-# Prokka will annotate the pangenome
-rule prokka_pan:
+# Bakta will annotate the pangenome
+rule bakta_pan:
     input:
         gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
     params:
-        db=params_dict["bakta_dir"],
+        db=param_dict["bakta_dir"],
         name="pan_genome_reference",
         outdir=os.path.join(OUT,"Pangenome/Summary/"),
     conda:
@@ -193,8 +193,8 @@ rule iqtree:
 rule amrfinder:
     input:
         setup=os.path.join(OUT,"Pangenome/Unitig/unitig.list"),
-        fasta=os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.faa"),
-        gff=os.path.join(OUT,"Pangenome/Prokka/{file}/{file}.gff"),
+        fasta=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.faa"),
+        gff=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff"),
     params:
         mut=os.path.join(OUT,"Pangenome/AMR/report_mut.txt"),
     conda:
@@ -310,7 +310,7 @@ rule kraken:
     input:
         os.path.join(FASTA, "{file}/{file}.fna"),
     params:
-        db=params_dict["kraken_dir"]
+        db=param_dict["kraken_dir"]
     conda:
         "envs/kraken.yml"
     log:

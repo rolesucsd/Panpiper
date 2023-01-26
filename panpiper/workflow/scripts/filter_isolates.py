@@ -142,15 +142,21 @@ def ani_filter(sample_list, file, ani, reference):
     """
     
     # Reads the ani text file
-    df = pd.read_csv(file, sep='\t', header=0, index_col=0)
+    df = pd.read_csv(file, sep='\t', header=None, index_col=None)
     df = df.fillna(value = 0)
+    df.set_axis(["sample", "reference", "ani", "contig1", "contig2"],
+                    axis=1,inplace=True)
+    df["sample"] = df["sample"].apply(os.path.basename)
+    df["reference"] = df["reference"].apply(os.path.basename)
+    df["reference"] = df["reference"].str.replace(".fna", "")
+    df["sample"] = df["sample"].str.replace(".fna", "")
     # Filter dataframe based off first column, select sample
     # Only add samples to the list if they are above 95% in the third column 
-    df_pass = df[df[reference] >= ani]
-    sample_fail = df.loc[df[reference] < ani, reference]
+    df_pass = df[df["ani"] >= ani]
+    sample_fail = df.loc[df["ani"] < ani]
     # Add the samples from the second column to the list
     # Return the list of samples by APPENDING TO LIST 
-    sample_list = list(df_pass.index)
+    sample_list = df_pass["sample"].tolist()
     sample_list = [*set(sample_list)]
     return sample_list, sample_fail
 
@@ -205,4 +211,3 @@ if __name__ == "__main__":
                 myfile.write('\n'.join(sample_list))
         checkm_fail.to_csv(args.outpath+'/failed_samples_checkm.csv', sep ='\t')
         ani_fail.to_csv(args.outpath+'/failed_samples_ani.csv', sep ='\t')
-        

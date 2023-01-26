@@ -97,51 +97,34 @@ rule checkm_to_graph:
         """
 
 
-rule fastani_list_create:
-    input:
-        fasta=expand(os.path.join(OUT,"Quality/Assembly_filter/{file}/{file}.fna"), file=READS),
-    params:
-        ref=REFERENCE,
-    output:
-        os.path.join(OUT,"Quality/FastANI/fastani_list.txt"),
-    log:
-        os.path.join(OUT,"report/fastani_list_create.log"),
-    shell:
-        """
-        chmod u+x panpiper/workflow/scripts/create_list.sh
-        panpiper/workflow/scripts/create_list.sh {input} {params} {output} &> {log}
-        """
-
-
 rule fastani:
     input:
-        os.path.join(OUT,"Quality/FastANI/fastani_list.txt"),
+        ref=REFERENCE,
+        file=os.path.join(OUT,"Quality/Assembly_filter/{file}/{file}.fna"),
     output:
-        os.path.join(OUT,"Quality/FastANI/matrix.txt"),
+        os.path.join(OUT,"Quality/FastANI/{file}.txt"),
     conda:
         "envs/fastani.yml"
     log:
-        os.path.join(OUT,"report/fastani.log"),
+        os.path.join(OUT,"report/fastani_{file}.log"),
     shell:
-        "fastANI --ql {input} --rl {input} -o {output} -t 20 &> {log}"
+        "fastANI -q {input.file} -r {input.ref} -o {output} &> {log}"
 
 
-rule fastani_long_to_wide:
+rule fastani_concat:
     input:
-        os.path.join(OUT,"Quality/FastANI/matrix.txt"),
+        expand(os.path.join(OUT,"Quality/FastANI/{file}.txt"), file=READS),
     output:
-        txt=os.path.join(OUT,"Quality/FastANI/matrix_wide.txt"),
-    log:
-        os.path.join(OUT,"report/fastani_long_to_wide.log"),
+        txt=os.path.join(OUT,"Quality/FastANI/full.txt"),
     shell:
-        "python panpiper/workflow/scripts/long_to_wide.py {input} {output.txt} &> {log}"
+        "cat {input} > {output}"
 
 
 # Filter files based off user-defined rules
 # Need to edit this python file bc it's messy rn
 rule filter_files:
     input:
-        ani=os.path.join(OUT,"Quality/FastANI/matrix_wide.txt"),
+        ani=os.path.join(OUT,"Quality/FastANI/full.txt"),
         stat=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
     params:
         checkm=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
@@ -163,7 +146,7 @@ rule filter_files:
 
 rule print_results:
     input:
-        ani=os.path.join(OUT,"Quality/FastANI/matrix_wide.txt"),
+        ani=os.path.join(OUT,"Quality/FastANI/full.txt"),
         stat=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
         log=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
         passed=os.path.join(OUT,"Quality/sample_list.txt"),
