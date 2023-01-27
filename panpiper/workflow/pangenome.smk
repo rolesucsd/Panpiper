@@ -34,6 +34,7 @@ rule all:
         os.path.join(OUT,"Pangenome/Summary/eggnog.txt"),
         os.path.join(OUT,"Pangenome/Summary/kraken_ag.txt"),
         os.path.join(OUT,"Pangenome/Unitig/unitig.pyseer"),
+        os.path.join(OUT,"Pangenome/Summary/eggnog.txt"),
 
 
 # Set up files for downstream analysis
@@ -58,6 +59,7 @@ rule setup:
 
 
 # Bakta will annotate individual assemblies and prepare them for pangenome construction
+# About 10 minutes per sample
 rule bakta_multiple:
     input:
         gen=os.path.join(FASTA,"{file}/{file}.fna"),
@@ -70,18 +72,18 @@ rule bakta_multiple:
     log:
         os.path.join(OUT,"report/bakta_{file}.log"),
     output:
-        gen=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff"),
+        gen=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff3"),
         faa=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.faa"),
         fna=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.fna"),
     shell:
-        "bakta --db {params.db} --output {params.outdir} --prefix {params.name} --locustag {params.name} {input} &> {log}"
+        "bakta --db {params.db} --output {params.outdir} --prefix {params.name} --locus-tag {params.name} {input} &> {log}"
 
 
 # Panaroo is an updated version of Roary to create a pangenome
 # 1 hour for 100 samples, scales linearlly
 rule panaroo:
     input:
-        gen=expand(os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff"), file=filtered),
+        gen=expand(os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff3"), file=filtered),
     params:
         os.path.join(OUT,"Pangenome/Panaroo"),
     log:
@@ -108,7 +110,7 @@ rule bakta_pan:
     log:
         os.path.join(OUT,"report/bakta_pan.log"),
     output:
-        gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.gff"),
+        gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.gff3"),
         faa=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.faa"),
         fna=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fna"),
     shell:
@@ -142,10 +144,12 @@ rule fasttree:
         os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
     conda:
         "envs/fasttree.yml"
+    log:
+        os.path.join(OUT,"report/fasttree.log"),
     output:
         os.path.join(OUT,"Pangenome/Phylogeny/fasttree.nwk"),
     shell:
-        "FastTree -gtr -nt -gamma -seed 12345{input} > {output}"
+        "FastTree -gtr -nt -gamma -seed 12345 {input} > {output}"
 
 
 # Build more accurate tree using fasttree as a starting point
@@ -194,7 +198,7 @@ rule amrfinder:
     input:
         setup=os.path.join(OUT,"Pangenome/Unitig/unitig.list"),
         fasta=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.faa"),
-        gff=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff"),
+        gff=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff3"),
     params:
         mut=os.path.join(OUT,"Pangenome/AMR/report_mut.txt"),
     conda:
@@ -234,7 +238,7 @@ rule graph_amr:
     output:
         os.path.join(OUT,"Pangenome/Summary/amr.png"),
     shell:
-        "Rscript panpiper/workflow/scripts/AMR_heatmap.R -i {input} -o {params} &> {log}"
+        "Rscript panpiper/workflow/scripts/AMR_heatmap.R {input} {params} &> {log}"
 
 
 # Work on phylogroup division using Poppunk
@@ -327,7 +331,6 @@ rule kraken_report:
     input:
         out=expand(os.path.join(OUT,"Pangenome/Kraken/{file}.out"), file=filtered),
     params:
-        path=os.path.join(OUT,"Pangenome/Kraken"),
         outpath=os.path.join(OUT,"Pangenome/Summary"),
     conda:
         "envs/r.yml"
@@ -337,7 +340,7 @@ rule kraken_report:
         report=os.path.join(OUT,"Pangenome/Summary/kraken_ag.txt")
     shell:
         """
-        Rscript panpiper/workflow/scripts/kraken.R {input} {output}
+        Rscript panpiper/workflow/scripts/kraken.R {input} {params.outpath} &> {log}
         """
 
 # Unitig caller will create unitigs which is a kmer alternative (read about why using it in gwas is better or worse)
@@ -355,4 +358,4 @@ rule unitig:
     output:
         os.path.join(OUT,"Pangenome/Unitig/unitig.pyseer"),
     shell:
-        "unitig-caller --call --reads {input} --out {params}"
+        "unitig-caller --call --reads {input} --out {params} &> {log}" 

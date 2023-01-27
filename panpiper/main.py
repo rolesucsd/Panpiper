@@ -64,6 +64,7 @@ def cli():
     apo.add_argument('--log_lvl', help='Logging level [%(default)s].', default='INFO', type=str, choices=['DEBUG','INFO','WARNING','ERROR'])
     apo.add_argument('--only_conda', help='Only install conda environments, then exit', action='store_true')
     apo.add_argument('--snake', help='Only run specific snakemake command. For debug purposes', type=str)
+    apo.add_argument('--dry_run', help='Only run specific snakemake command. For debug purposes', action='store_true')
     apo.add_argument('--unlock', help='Unlock snakemake directory in case of unexpected exists, then exit', action='store_true')
 
     # Parameters
@@ -77,7 +78,7 @@ def cli():
     app.add_argument('--n50', help='N50 cutoff', default = 5000, type=int)
     app.add_argument('--eggnog_dir', help='Path to the eggnog database directory', default = "panpiper/databases/eggnog", type=str)
     app.add_argument('--kraken_dir', help='Path to the kraken2 database directory', default = "panpiper/databases/kraken", type=str)
-    app.add_argument('--bakta_dir', help='Path to the batka database directory', default = "panpiper/databases/batka", type=str)
+    app.add_argument('--bakta_dir', help='Path to the bakta database directory', default = "panpiper/databases/bakta", type=str)
     app.add_argument('--pheno_column', help='The column in the phenotype file to use for the association study', default = 1, type=int)
     app.add_argument('--pheno_file', help='The filename and full path of the phenotype file', default = "skip", type=str)
 

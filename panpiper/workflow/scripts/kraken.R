@@ -11,21 +11,19 @@
 # Input: 
 # Output: 
 
-library(foreach)
-library(parallel)
 library(tidyverse)
 
 # Input
 args <- commandArgs(trailingOnly = TRUE)
-path <- args[1:length(args)]
+kraken_files <- args[1:(length(args)-1)]
 outpath <- args[length(args)]
 
-kraken_files <- list.files(path)
 kraken_contig <- data.frame()
 kraken_ag <- data.frame()
 for (i in 1:length(kraken_files)){
   f <- kraken_files[i]
-  df <- read.delim(paste(path,f,sep="/"),header=FALSE)
+  print(f)
+  df <- read.delim(f,header=FALSE)
   df <- df[,c(1:4)]
   f <- sub(".out","",f)
   df$sample <- f

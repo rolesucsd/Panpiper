@@ -82,7 +82,11 @@ class Workflow(object):
             logging.info('Only creating conda environments.')
             cmd.append(' --conda-create-envs-only')
 
+        if self.dry_run:
+            logging.info('Creating a dry run.')
+            cmd.append('-n')
         # If unlocking
+
         if self.unlock:
             logging.info('Unlocking working directory.')
             cmd.append('--unlock')
