@@ -18,6 +18,11 @@ with open(PARAMS, 'r') as fh:
     fl = [x.strip().split() for x in fh.readlines()]
 param_dict = {x[0]: x[1] for x in fl}
 
+BAKTA = param_dict["bakta_dir"]
+REF = param_dict["ref"]
+EGGNOG = param_dict['eggnog_dir']
+KRAKEN = param_dict["kraken_dir"]
+
 def read_filtered_files():
     with open(SAMPLE_LIST) as f:
         raw_reads = [sample for sample in f.read().split('\n') if len(sample) > 0]
@@ -36,6 +41,42 @@ rule all:
         os.path.join(OUT,"Pangenome/Unitig/unitig.pyseer"),
         os.path.join(OUT,"Pangenome/Summary/eggnog.txt"),
 
+# Download databases
+rule bakta:
+    input:
+        BAKTA,
+    conda:
+        "envs/bakta.yml",
+    log:
+        os.path.join(OUT,"report/bakta_db.log"),
+    output:
+        os.path.join(BAKTA, "bakta.db"),
+    shell:
+        "bakta_db download --output {input} &> {log}"
+
+rule eggnog_db:
+    input:
+        EGGNOG,
+    conda:
+        "envs/eggnog.yml",
+    log:
+        os.path.join(OUT,"report/eggnog_db.log"),
+    output:
+        os.path.join(EGGNOG, "eggnog.db"),
+    shell:
+        "download_eggnog_data.py --data_dir {input}"
+
+rule kraken_db:
+    input:
+        KRAKEN,
+    conda:
+        "envs/kraken.yml",
+    log:
+        os.path.join(OUT,"report/kraken_db.log"),
+    output:
+        os.path.join(KRAKEN, "taxo.k2d"),
+    shell:
+        "kraken2-build --standard -db {input}"
 
 # Set up files for downstream analysis
 rule setup:
@@ -54,7 +95,6 @@ rule setup:
         """
         chmod u+x panpiper/workflow/scripts/setup.sh
         panpiper/workflow/scripts/setup.sh {input} {params} &> {log}
-        amrfinder -u
         """
 
 
@@ -63,8 +103,9 @@ rule setup:
 rule bakta_multiple:
     input:
         gen=os.path.join(FASTA,"{file}/{file}.fna"),
+        db=os.path.join(BAKTA, "bakta.db"),
     params:
-        db=param_dict["bakta_dir"],
+        db=BAKTA,
         name="{file}",
         outdir=os.path.join(OUT,"Pangenome/Bakta/{file}"),
     conda:
@@ -76,7 +117,7 @@ rule bakta_multiple:
         faa=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.faa"),
         fna=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.fna"),
     shell:
-        "bakta --db {params.db} --output {params.outdir} --prefix {params.name} --locus-tag {params.name} {input} &> {log}"
+        "bakta --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} --locus-tag {params.name} {input.gen} &> {log}"
 
 
 # Panaroo is an updated version of Roary to create a pangenome
@@ -96,13 +137,22 @@ rule panaroo:
     shell:
         "panaroo -i {input} -o {params} --remove-invalid-genes --clean-mode strict -a core --core_threshold 0.98 --len_dif_percent 0.98 -f 0.7 --merge_paralogs -t 20 &> {log}"
 
+# Translate DNA to AA
+rule translate:
+    input:
+        os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
+    output:
+        gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.faa"),
+    shell:
+        "python panpiper/workflow/scripts/nc_aa_translate.py {input} {output}"
 
 # Bakta will annotate the pangenome
 rule bakta_pan:
     input:
-        gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
+        gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.faa"),
+        db=os.path.join(BAKTA, "bakta.db"),
     params:
-        db=param_dict["bakta_dir"],
+        db=BAKTA,
         name="pan_genome_reference",
         outdir=os.path.join(OUT,"Pangenome/Summary/"),
     conda:
@@ -110,11 +160,9 @@ rule bakta_pan:
     log:
         os.path.join(OUT,"report/bakta_pan.log"),
     output:
-        gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.gff3"),
-        faa=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.faa"),
-        fna=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fna"),
+        fna=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.tsv"),
     shell:
-        "bakta --db {params.db} --output {params.outdir} --prefix {params.name} {input} &> {log}"
+        "bakta_proteins --db {params.db} --output {params.outdir} --prefix {params.name} {input} &> {log}"
 
 # Insert bakta pan (there is a bakta protein version that can annotate the pangenome)
 
@@ -146,6 +194,8 @@ rule fasttree:
         "envs/fasttree.yml"
     log:
         os.path.join(OUT,"report/fasttree.log"),
+    resources:
+        mem_mb=500000,
     output:
         os.path.join(OUT,"Pangenome/Phylogeny/fasttree.nwk"),
     shell:
@@ -177,7 +227,7 @@ rule iqtree:
         aln=os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
         tre=os.path.join(OUT,"Pangenome/Phylogeny/RAxML_result.tree2"),
     params:
-        os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln.iqtree"),
+        output=os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln.iqtree"),
     conda:
         "envs/iqtree.yml"
     log:
@@ -196,7 +246,6 @@ rule iqtree:
 # TODO: Does snakemake allow optional parameters? 
 rule amrfinder:
     input:
-        setup=os.path.join(OUT,"Pangenome/Unitig/unitig.list"),
         fasta=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.faa"),
         gff=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff3"),
     params:
@@ -262,7 +311,7 @@ rule poppunk_qc:
         os.path.join(OUT,"Pangenome/Phylogroups/db/db.dists.pkl"),
     params:
         db=os.path.join(OUT,"Pangenome/Phylogroups/db"),
-        ref=param_dict["ref"],
+        ref=REF,
     conda:
         "envs/poppunk.yml"
     log:
@@ -296,9 +345,11 @@ rule poppunk_fit:
 rule eggnog_mapper:
     input:
         protein=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.faa"),
+        db=os.path.join(EGGNOG, "eggnog.db"),
+        fna=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.tsv"),
     params:
         outdir=os.path.join(OUT,"Pangenome/Summary"),
-        db=param_dict['eggnog_dir'],
+        db=EGGNOG,
     conda:
         "envs/eggnog.yml"
     log:
@@ -312,9 +363,10 @@ rule eggnog_mapper:
 
 rule kraken:
     input:
-        os.path.join(FASTA, "{file}/{file}.fna"),
+        file=os.path.join(FASTA, "{file}/{file}.fna"),
+        db=os.path.join(KRAKEN, "taxo.k2d"),
     params:
-        db=param_dict["kraken_dir"]
+        db=KRAKEN,
     conda:
         "envs/kraken.yml"
     log:
@@ -324,24 +376,30 @@ rule kraken:
         report=os.path.join(OUT,"Pangenome/Kraken/{file}.report")
     shell:
         """
-        kraken2 --db {params.db} --output {output.out} --threads 20 --use-names --report {output.report} --use-mpa-style {input} &> {log}
+        kraken2 --db {params.db} --output {output.out} --threads 20 --use-names --report {output.report} --use-mpa-style {input.file} &> {log}
         """
 
-rule kraken_report:
+rule kraken_reformat:
     input:
-        out=expand(os.path.join(OUT,"Pangenome/Kraken/{file}.out"), file=filtered),
+        out=os.path.join(OUT,"Pangenome/Kraken/{file}.out"),
     params:
-        outpath=os.path.join(OUT,"Pangenome/Summary"),
-    conda:
-        "envs/r.yml"
+        sample="{file}",
+        outpath=os.path.join(OUT,"Pangenome/Kraken"),
     log:
-        os.path.join(OUT,"report/kraken_summary.log"),
+        os.path.join(OUT,"report/kraken_reformat_{file}.log"),
     output:
-        report=os.path.join(OUT,"Pangenome/Summary/kraken_ag.txt")
+        report=os.path.join(OUT,"Pangenome/Kraken/{file}_reformat.txt"),
     shell:
-        """
-        Rscript panpiper/workflow/scripts/kraken.R {input} {params.outpath} &> {log}
-        """
+        "python panpiper/workflow/scripts/kraken_reformat.py {params.sample} {params.outpath} &> {log}"
+
+rule kraken_ag:
+    input:
+        report=expand(os.path.join(OUT,"Pangenome/Kraken/{file}_reformat.txt"), file=filtered),
+    output:
+        os.path.join(OUT,"Pangenome/Summary/kraken_ag.txt"),
+    shell:
+        "awk FNR!=1 {input} > {output}"
+
 
 # Unitig caller will create unitigs which is a kmer alternative (read about why using it in gwas is better or worse)
 # In future note that you can use fastq or fasta or both see commented out line of code for other use
@@ -359,3 +417,24 @@ rule unitig:
         os.path.join(OUT,"Pangenome/Unitig/unitig.pyseer"),
     shell:
         "unitig-caller --call --reads {input} --out {params} &> {log}" 
+
+# Mash- computes approximate distance between two samples QUICKLY 
+# locality-sensitive hashing (called MinHash sketches which have been used in lots of areas ie website comparisons)
+# Time: 30 minutes for 571 samples
+rule mash_fasta:
+    input:
+        file=expand(os.path.join(FASTA, "{file}/{file}.fna"), file=filtered),
+    params:
+        out=os.path.join(OUT, "Pangenome/Summary/mash"),
+    conda:
+        "envs/mash.yml",
+    output:
+        file=os.path.join(OUT, "Pangenome/Summary/mash.tsv"),
+    shell:
+        """
+        mash sketch -s 10000 -o {params.out} {input}
+        mash dist {params.out}.msh {params.out}.msh -t > {output}
+        """
+#        sed -i -e 's/.fasta//g' {output}
+#       sed -i -e "s/${params.pref}//g" {output}"
+

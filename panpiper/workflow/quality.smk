@@ -14,7 +14,7 @@ FASTA = config['fasta']
 REFERENCE = config['ref']
 PARAMS = config['params']
 SAMPLE_LIST = config['list']
-SAMPLES_OUT = os.path.join(OUT, 'Quality/"quality_report.html"')
+SAMPLES_OUT = os.path.join(OUT, 'Quality/quality_report.html')
 
 with open(PARAMS, 'r') as fh:   
     fl = [x.strip().split() for x in fh.readlines()]
@@ -152,6 +152,7 @@ rule print_results:
         passed=os.path.join(OUT,"Quality/sample_list.txt"),
     params:
         ref=PARAMS_REF,
+        outdir=os.path.join(OUT, 'Quality')
     conda:
         "envs/r.yml"
     log:
@@ -159,6 +160,6 @@ rule print_results:
     output:
         SAMPLES_OUT,
     shell:
-        "Rscript -e \"rmarkdown::render('panpiper/workflow/scripts/quality_report.Rmd', params=list(checkm = '{input.stat}', log = '{input.log}', ani = '{input.ani}', passed = '{input.passed}', ref = '{params.ref}'))\" &> {log}"
+        "Rscript -e \"rmarkdown::render('panpiper/workflow/scripts/quality_report.Rmd', output_dir = '{params.outdir}', params=list(checkm = '{input.stat}', log = '{input.log}', ani = '{input.ani}', passed = '{input.passed}', ref = '{params.ref}'))\" &> {log}"
 
 

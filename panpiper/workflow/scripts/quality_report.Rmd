@@ -23,7 +23,7 @@ library(plotly)
 ```{r,  include=FALSE}
 checkm <- read.delim(params$checkm, check.names = FALSE)
 log <- read.delim(params$log)
-ani <- read.delim(params$ani, check.names = FALSE\)
+ani <- read.delim(params$ani, check.names = FALSE)
 passed <- as.data.frame(read.delim(params$passed,col.names = "Sample", header=FALSE))
 ref <- params$ref
 ```
@@ -47,11 +47,11 @@ data_long <- melt(log, id.vars=c("Sample", "Passed", "Marker_lineage"))  # conve
 data_long$value <- as.numeric(as.character(data_long$value))
 p<-ggplot(data_long, aes(fill=Passed, x=Sample, y=value))+
   geom_bar(stat="identity")+
-  theme_bw()+
+  theme_classic()+
   ggtitle("CheckM")+
   xlab("Isolates")+
   ylab("")+
-  theme(axis.text.x = element_text(angle=90, hjust=1))+
+  theme(axis.text.x = element_blank())+
   scale_fill_manual(values=c("yes"="#62b587","no"="grey"))+
   facet_wrap(~variable, scale = "free_y", nrow=3)
 ggplotly(p)
@@ -66,11 +66,11 @@ data_long <- melt(checkm, id.vars=c("Sample", "Passed"))  # convert to long form
 data_long$value <- as.numeric(as.character(data_long$value))
 p <- ggplot(data_long, aes(fill=Passed, x=Sample, y=value))+
   geom_bar(stat="identity")+
-  theme_bw()+
+  theme_classic()+
   ggtitle("CheckM")+
   xlab("Isolates")+
   ylab("")+
-  theme(axis.text.x = element_text(angle=90, hjust=1))+
+  theme(axis.text.x = element_blank())+
   scale_fill_manual(values=c("yes"="#62b587","no"="grey"))+
   theme(panel.spacing.x=unit(0, "lines") , panel.spacing.y=unit(1,"lines"))+
   facet_wrap(~variable, scale = "free_y", nrow = 5)
@@ -85,12 +85,12 @@ The following plots show information for each individual sample.
 checkm$contigs <- as.numeric(as.character(checkm$contigs))
 p<-ggplot(checkm, aes(y=contigs, x=Sample, fill=Passed))+
   geom_bar(stat="identity")+
-  theme_bw()+
+  theme_classic()+
   ggtitle("CheckM: Number of Contigs")+
   xlab("Isolates")+
   ylab("")+
   guides(fill=guide_legend(title="Passed"))+
-  theme(axis.text.x = element_text(angle=90, hjust=1))+
+  theme(axis.text.x = element_blank())+
   scale_fill_manual(values=c("yes"="#62b587","no"="grey"))
 ggplotly(p)
 ```
@@ -99,12 +99,12 @@ ggplotly(p)
 checkm$`N50 contigs` <- as.numeric(as.character(checkm$`N50 contigs`))
 p<-ggplot(checkm, aes(y=`N50 contigs`, x=Sample, fill=Passed))+
   geom_bar(stat="identity")+
-  theme_bw()+
+  theme_classic()+
   ggtitle("CheckM: N50 (contigs)")+
   xlab("Isolates")+
   ylab("")+
   guides(fill=guide_legend(title="Passed"))+
-  theme(axis.text.x = element_text(angle=90, hjust=1))+
+  theme(axis.text.x = element_blank())+
   scale_fill_manual(values=c("yes"="#62b587","no"="grey"))
 ggplotly(p)
 ```
@@ -114,12 +114,12 @@ ggplotly(p)
 checkm$`Genome size` <- as.numeric(as.character(checkm$`Genome size`))
 p<-ggplot(checkm, aes(y=`Genome size`, x=Sample, fill=Passed))+
   geom_bar(stat="identity")+
-  theme_bw()+
+  theme_classic()+
   ggtitle("CheckM: Genome size")+
   xlab("Isolates")+
   ylab("")+
   guides(fill=guide_legend(title="Oassed"))+
-  theme(axis.text.x = element_text(angle=90, hjust=1))+
+  theme(axis.text.x = element_blank())+
   scale_fill_manual(values=c("yes"="#62b587","no"="grey"))
 ggplotly(p)
 ```
@@ -128,12 +128,12 @@ ggplotly(p)
 checkm$GC <- as.numeric(as.character(checkm$GC))
 p<-ggplot(checkm, aes(y=GC, x=Sample, fill=Passed))+
   geom_bar(stat="identity")+
-  theme_bw()+
+  theme_classic()+
   ggtitle("CheckM: GC")+
   xlab("Isolates")+
   ylab("")+
   guides(fill=guide_legend(title="Passed"))+
-  theme(axis.text.x = element_text(angle=90, hjust=1))+
+  theme(axis.text.x = element_blank())+
   scale_fill_manual(values=c("yes"="#62b587","no"="grey"))
 ggplotly(p)
 ```
@@ -143,11 +143,11 @@ checkm$`Mean contig length` <- as.numeric(as.character(checkm$`Mean contig lengt
 p<-ggplot(checkm, aes(y=`Mean contig length`, x=Sample, fill=Passed))+
   geom_bar(stat="identity")+
   ggtitle("CheckM: Mean contig length")+
-  theme_bw()+
+  theme_classic()+
   xlab("Isolates")+
   ylab("")+
   guides(fill=guide_legend(title="Passed"))+
-  theme(axis.text.x = element_text(angle=90, hjust=1))+
+  theme(axis.text.x = element_blank())+
   scale_fill_manual(values=c("yes"="#62b587","no"="grey"))
 ggplotly(p)
 ```

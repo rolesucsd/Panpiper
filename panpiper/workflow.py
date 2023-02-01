@@ -38,10 +38,10 @@ class Workflow(object):
         # need to edit j
         cmd = ['snakemake',
                '--use-conda',
-               '--verbose',
                '--latency-wait', '20',
-               '--scheduler', 'greedy',
+#               '--scheduler', 'greedy',
                '--rerun-incomplete',
+#               '--rerun-triggers', 'mtime',
                '-s', snakefile,
                '--config',
                'out='+self.output,
@@ -113,7 +113,3 @@ class Workflow(object):
         # If unlocking exit program
         if self.unlock:
             sys.exit()
-
-        # Print info
-        if not self.only_conda:
-            messages.check()
