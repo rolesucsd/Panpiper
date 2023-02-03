@@ -1,0 +1,7 @@
+name: pyseer
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pyseer=1.3.9

@@ -36,10 +36,9 @@ rule all:
         os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.bwt"),
         os.path.join(OUT,"Pangenome/Summary/db_clusters.csv"),
         os.path.join(OUT,"Pangenome/Summary/core_gene_alignment.aln.iqtree"),
-        os.path.join(OUT,"Pangenome/Summary/eggnog.txt"),
+        os.path.join(OUT,"Pangenome/Summary/Summary.emapper.annotations"),
         os.path.join(OUT,"Pangenome/Summary/kraken_ag.txt"),
         os.path.join(OUT,"Pangenome/Unitig/unitig.pyseer"),
-        os.path.join(OUT,"Pangenome/Summary/eggnog.txt"),
 
 # Download databases
 rule bakta:
@@ -162,7 +161,7 @@ rule bakta_pan:
     output:
         fna=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.tsv"),
     shell:
-        "bakta_proteins --db {params.db} --output {params.outdir} --prefix {params.name} {input} &> {log}"
+        "bakta_proteins --db {params.db} --output {params.outdir} --prefix {params.name} {input.gen} &> {log}"
 
 # Insert bakta pan (there is a bakta protein version that can annotate the pangenome)
 
@@ -348,14 +347,14 @@ rule eggnog_mapper:
         db=os.path.join(EGGNOG, "eggnog.db"),
         fna=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.tsv"),
     params:
-        outdir=os.path.join(OUT,"Pangenome/Summary"),
+        outdir=os.path.join(OUT,"Pangenome/Summary/Summary"),
         db=EGGNOG,
     conda:
         "envs/eggnog.yml"
     log:
         os.path.join(OUT,"report/eggnog_mapper.log"),
     output:
-        os.path.join(OUT,"Pangenome/Summary/eggnog.txt"),
+        os.path.join(OUT,"Pangenome/Summary/Summary.emapper.annotations"),
     shell:
         """
         emapper.py -i {input.protein} --data_dir {params.db} -o {params.outdir} --override &> {log}
@@ -417,24 +416,4 @@ rule unitig:
         os.path.join(OUT,"Pangenome/Unitig/unitig.pyseer"),
     shell:
         "unitig-caller --call --reads {input} --out {params} &> {log}" 
-
-# Mash- computes approximate distance between two samples QUICKLY 
-# locality-sensitive hashing (called MinHash sketches which have been used in lots of areas ie website comparisons)
-# Time: 30 minutes for 571 samples
-rule mash_fasta:
-    input:
-        file=expand(os.path.join(FASTA, "{file}/{file}.fna"), file=filtered),
-    params:
-        out=os.path.join(OUT, "Pangenome/Summary/mash"),
-    conda:
-        "envs/mash.yml",
-    output:
-        file=os.path.join(OUT, "Pangenome/Summary/mash.tsv"),
-    shell:
-        """
-        mash sketch -s 10000 -o {params.out} {input}
-        mash dist {params.out}.msh {params.out}.msh -t > {output}
-        """
-#        sed -i -e 's/.fasta//g' {output}
-#       sed -i -e "s/${params.pref}//g" {output}"
 

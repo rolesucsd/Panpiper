@@ -48,5 +48,5 @@ amr_wide_edit    <- amr_wide_edit[,order(colnames(amr_wide_edit))]
 
 # Create heatmap
 png(filename=outpng, units="in", width=7, height=15, res=300)
-pheatmap(amr_wide_edit, fontsize_row=1, color=colorRampPalette(c("white", "red"))(50), cluster_cols = FALSE)
+pheatmap(amr_wide_edit, show_rownames = F, color=colorRampPalette(c("white", "red"))(50), cluster_cols = FALSE)
 dev.off()

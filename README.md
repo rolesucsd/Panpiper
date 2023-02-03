@@ -10,7 +10,7 @@ This package conducts bacterial isolate analysis for one species.
     * The assemblies are analyzed with [CheckM](https://github.com/Ecogenomics/CheckM) and [FastANI](https://github.com/ParBLiSS/FastANI)
     * Based on user-defined thresholds the samples are sorted into ones which pass or don't pass requirements
 * Pangenome analysis
-    * The assemblies are combined in a pangenome with [Panaroo](https://github.com/gtonkinhill/panaroo) and annotated with [AMRFinderPlus](https://github.com/ncbi/amr), [Prokka](https://github.com/tseemann/prokka), [EggNOG-mapper](https://github.com/eggnogdb/eggnog-mapper), and [Kraken2](https://github.com/DerrickWood/kraken2)
+    * The assemblies are combined in a pangenome with [Panaroo](https://github.com/gtonkinhill/panaroo) and annotated with [AMRFinderPlus](https://github.com/ncbi/amr), [Bakta](https://github.com/oschwengers/bakta), [EggNOG-mapper](https://github.com/eggnogdb/eggnog-mapper), and [Kraken2](https://github.com/DerrickWood/kraken2)
     * The core genome alignment is used to create a phylogenetic tree with [FastTree](http://www.microbesonline.org/fasttree/), [RAxML](https://github.com/stamatak/standard-RAxML), and [IQ-TREE](https://github.com/Cibiv/IQ-TREE)
     * The samples are divided into phylogroups with [PopPUNK](https://github.com/bacpop/PopPUNK)
 * Genome-wide association study
