@@ -45,7 +45,6 @@ class Controller(object):
                 sys.exit()
 
         # Check input, params, and output
-        self.check_params()
         self.check_out()
         if not any([self.unlock, self.only_conda, self.snake is not None]):
             if(self.workflow == "assembly"):
@@ -56,24 +55,10 @@ class Controller(object):
             elif(self.workflow == "pangenome"):
                 self.check_list()
                 self.check_reference()
+            elif(self.workflow == "pyseer"):
+                self.check_pyseer()
 
         self.write_params(args)
-
-    def check_params(self):
-        """
-        Checks parameter validity 
-
-        Raises
-        ------
-        Error
-            'Error: GC content is typically above 20'
-
-        TODO: Add more parameter checks
-        """
-        if self.gc < 20:
-            logging.error('GC content is typically above 20')
-            sys.exit()
-
 
     def check_out(self):
         """
@@ -144,6 +129,21 @@ class Controller(object):
                 if not os.path.join(self.fasta, line, ".fa"):
                     logging.error('Sample names not present in fasta directory')
                     sys.exit()
+
+                    
+    def check_pyseer(self):
+        # genes : gene_presence_absence.Rtab check if matrix
+
+        # structure : struct_presence_absence.Rtab check if matrix
+        
+        # unitig : unitig.pyseer.gz check that it's zipped 
+
+        # tree : iqtree.nwk check if in newick format 
+
+        # reference : check if file in text can be found 
+
+        # pheno : check if file has sample name as first column
+        
 
     def write_params(self, args):
         """

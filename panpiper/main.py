@@ -47,6 +47,7 @@ def cli():
     apr.add_argument('-o', '--output', help='Prefix for output directory', required=True)
     apr.add_argument('-r', '--reference', help='Reference fasta file, includes path', required=False, default="skip", type=str)
     apr.add_argument('-w', '--workflow', help='Choose which workflow to run [%(default)s]', default='assembly', type=str, choices=['assembly','quality','pangenome', 'pyseer'])
+    apr.add_argument('-f', '--pheno', help='The filename and full path of the phenotype file', default = "skip", type=str)
 
     # Cluster arguments
     apc = ap.add_argument_group('compute cluster arguments')
@@ -79,8 +80,7 @@ def cli():
     app.add_argument('--eggnog_dir', help='Path to the eggnog database directory', default = "panpiper/databases/eggnog", type=str)
     app.add_argument('--kraken_dir', help='Path to the kraken2 database directory', default = "panpiper/databases/kraken", type=str)
     app.add_argument('--bakta_dir', help='Path to the bakta database directory', default = "panpiper/databases/bakta", type=str)
-    app.add_argument('--pheno_column', help='The column in the phenotype file to use for the association study', default = 1, type=int)
-    app.add_argument('--pheno_file', help='The filename and full path of the phenotype file', default = "skip", type=str)
+    app.add_argument('--pheno_column', help='The column in the phenotype file to use for the association study', type=str)
 
     ########## Workflow ##########
     master = Controller(ap)
@@ -109,13 +109,13 @@ def cli():
     # If workflow is set to Pangenome
     elif (master.workflow  == "pangenome"):
         logging.info('Run pangenome creation and analysis')
-        logging.info('The parameters used in this study are- Eggnog Database Directory:' +master.eggnog_dir+ ', Kraken Database Directory:' +master.kraken_dir)
+        logging.info('The parameters used in this study are- Eggnog Database Directory: ' +master.eggnog_dir+ ', Kraken Database Directory: ' +master.kraken_dir+ ', Bakta Database Directory: ' +master.bakta_dir)
         wf.run(snakefile=WORKFLOW_PANGENOME)
 
     # If workflow is set to Pyseer
     elif (master.workflow  == "pyseer"):
         logging.info('Run genome-wide association study')
-        logging.info('The parameters used in this study are- Phenotype file:' +master.pheno_file+ ', Phenotype column:' +master.pheno_column)
+        logging.info('The parameters used in this study are- Phenotype column:' +str(master.pheno_column))
         wf.run(snakefile=WORKFLOW_PYSEER)
 
 if __name__ == '__main__':

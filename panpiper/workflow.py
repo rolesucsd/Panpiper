@@ -47,6 +47,11 @@ class Workflow(object):
                'fasta='+self.fasta,
                'list='+self.sample_list,
                'ref='+self.reference,
+               'structure='+self.structure,
+               'unitig='+self.unitig,
+               'tree='+self.tree,
+               'genes='+self.genes,
+               'pheno='+self.pheno,
                'params='+self.params]
         
         # If run on server

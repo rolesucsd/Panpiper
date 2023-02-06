@@ -23,12 +23,13 @@ import math
 import distutils.util
 
 OUT = config['out']
-COG = config['cog']
+GENES = config['genes']
 STRUCTURE = config['structure']
 UNITIG = config['unitig']
-SNP = config['snp']
-PARAMS = config['params']
+TREE = config['tree']
 REF = config['ref']
+PHENO = config['pheno']
+PARAMS = config['params']
 
 with open(PARAMS, 'r') as fh:   
     fl = [x.strip().split() for x in fh.readlines()]
@@ -36,16 +37,16 @@ param_dict = {x[0]: x[1] for x in fl}
 
 rule all:
     input:
-        os.path.join(OUT,"Pyseer/COG_analysis.txt"),
+        os.path.join(OUT,"Pyseer/significant_genes.txt"),
         os.path.join(OUT,"Pyseer/unitig_gene_hits.txt"),
-        os.path.join(OUT,"Pyseer/struct_analysis.txt"),
+        os.path.join(OUT,"Pyseer/significant_structure.txt"),
         os.path.join(OUT,"Pyseer/unitig_gene_hits_enet.txt"),
 
 # We will use the distances from the core genome phylogeny, which has been midpointed rooted:
 # TODO: check root of tree
-rule pyseer_SNP_to_matrix:
+rule pyseer_TREE_to_matrix:
     input:
-        SNP
+        TREE
     conda:
         "envs/pyseer.yml"
     output:
@@ -54,33 +55,57 @@ rule pyseer_SNP_to_matrix:
         "python panpiper/workflow/scripts/phylogeny_distance.py --lmm {input} > {output}"
 
 # TODO: May want to include covariates 
-rule pyseer_COG_analysis:
+rule pyseer_gene_analysis:
     input:
-        cog=COG
-        phylo=os.path.join(OUT,"Pyseer/phylogeny_similarity.tsv"),
-    params:
-        pheno_col=param_dict["pheno"],
-        pheno=param_dict["meta"],
-    conda:
-        "envs/pyseer.yml"  
-    output:
-        os.path.join(OUT,"Pyseer/COG_analysis.txt"),
-    shell:
-        "pyseer --lmm --phenotypes {params.pheno} --phenotype-column {params.pheno_col} --pres {input.roary} --similarity {input.phylo} --cpu 8 > {output}"
-       
-rule pyseer_structure_analysis:
-    input:
-        roary=STRUCTURE,
+        genes=GENES,
         phylo=os.path.join(OUT,"Pyseer/phylogeny_similarity.tsv"),
     params:
         pheno_col=param_dict["pheno_column"],
-        pheno=param_dict["pheno_file"],
+        pheno=PHENO,
+    conda:
+        "envs/pyseer.yml"  
+    output:
+        os.path.join(OUT,"Pyseer/gene_analysis.txt"),
+    shell:
+        "pyseer --lmm --phenotypes {params.pheno} --phenotype-column {params.pheno_col} --pres {input.genes} --similarity {input.phylo} --cpu 8 > {output}"
+       
+rule pyseer_filter_genes:
+    input:
+        os.path.join(OUT,"Pyseer/gene_analysis.txt"),
+    conda:
+        "envs/r.yml"
+    output:
+        unitig=os.path.join(OUT,"Pyseer/significant_genes.txt"),
+    shell:
+        """
+        Rscript panpiper/workflow/scripts/filter_kmers.R {input} {output}
+        """
+
+rule pyseer_structure_analysis:
+    input:
+        panaroo=STRUCTURE,
+        phylo=os.path.join(OUT,"Pyseer/phylogeny_similarity.tsv"),
+    params:
+        pheno_col=param_dict["pheno_column"],
+        pheno=PHENO,
     conda:
         "envs/pyseer.yml"  
     output:
         COG=os.path.join(OUT,"Pyseer/struct_analysis.txt")
     shell:
-        "pyseer --lmm --phenotypes {params.pheno} --phenotype-column {params.pheno_col} --pres {input.roary} --similarity {input.phylo}  > {output.COG}"
+        "pyseer --lmm --phenotypes {params.pheno} --phenotype-column {params.pheno_col} --pres {input.panaroo} --similarity {input.phylo}  > {output.COG}"
+
+rule pyseer_filter_strc:
+    input:
+        os.path.join(OUT,"Pyseer/struct_analysis.txt")
+    conda:
+        "envs/r.yml"
+    output:
+        unitig=os.path.join(OUT,"Pyseer/significant_structure.txt"),
+    shell:
+        """
+        Rscript panpiper/workflow/scripts/filter_kmers.R {input} {output}
+        """
 
 rule pyseer_unitig:
     input:
@@ -88,14 +113,14 @@ rule pyseer_unitig:
         unitig=UNITIG,
     params:
         pheno_col=param_dict["pheno_column"],
-        pheno=param_dict["pheno_file"],
+        pheno=PHENO,
     conda:
         "envs/pyseer.yml"
     output:
         patterns=os.path.join(OUT,"Pyseer/unitig_patterns.txt"),
         unitig=os.path.join(OUT,"Pyseer/unitig.txt"),
     shell:
-        "pyseer --lmm --print-samples  --similarity {input.phylo} --phenotypes {params.pheno} --phenotype-column {params.pheno_col} --kmers {input.unitig} --output-patterns {output.patterns} --cpu 8 --lineage > {output.unitig}"
+        "pyseer --lmm --print-samples  --similarity {input.phylo} --phenotypes {params.pheno} --phenotype-column {params.pheno_col} --kmers {input.unitig} --output-patterns {output.patterns} --cpu 8 > {output.unitig}"
 
 rule pyseer_patterns_unitig:
     input:
@@ -144,16 +169,16 @@ rule unitig_gene:
 
 rule pyseer_elastic_net:
     input:
-        unitig=os.path.join(OUT,"Pyseer/unitig.pyseer.gz"),
+        unitig=UNITIG,
     params:
         pheno_col=param_dict["pheno_column"],
-        pheno=param_dict["pheno_file"],
+        pheno=PHENO,
     conda:
         "envs/pyseer.yml"
     output:
         unitig=os.path.join(OUT,"Pyseer/unitig_enet.txt"),
     shell:
-        "pyseer --wg enet --cpu 8 --phenotypes {params.pheno} --phenotype-column {params.pheno_col} --kmers {input.unitig}"
+        "pyseer --wg enet --cpu 8 --phenotypes {params.pheno} --phenotype-column {params.pheno_col} --kmers {input.unitig} > {output}"
 
 rule pyseer_filter_unitig_elastic_net:
     input:

@@ -184,7 +184,6 @@ rule bwa_index_pan:
         mv {params.inte} {output}
         """
 
-
 # Create a starting tree based off core genome alignment
 rule fasttree:
     input:
@@ -239,8 +238,6 @@ rule iqtree:
         cp {params.output} {output}
         """
 
-
-
 # Identify antibiotic resistance in the all the samples
 # TODO: Does snakemake allow optional parameters? 
 rule amrfinder:
@@ -259,7 +256,6 @@ rule amrfinder:
         """
         amrfinder -p {input.fasta} --plus --threads 20 --mutation_all {params.mut} -o {output} &> {log}
         """
-
 
 # Summarize antibiotic resistance accross all files
 rule concat_amr:
@@ -339,7 +335,6 @@ rule poppunk_fit:
         poppunk --fit-model {params.model} --ref-db {params.db} --K 4 &> {log}
         cp {params.out} {output}
         """
-
 
 rule eggnog_mapper:
     input:
