@@ -6,11 +6,13 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import sys, getopt
+import sys
+import getopt
 import os
 import numpy as np
 import pandas as pd
 import argparse
+
 
 def amr_concat(files, output):
     """
@@ -36,7 +38,7 @@ def amr_concat(files, output):
     for f in files:
         df_new = pd.read_csv(f, sep="\t")
         df_new['Sample'] = f
-        df = pd.concat([df_new,df])
+        df = pd.concat([df_new, df])
 
     # If the output file exists, overwrite it
     if os.path.exists(output):
@@ -46,6 +48,7 @@ def amr_concat(files, output):
     # Write the dataframe to the desired location
     df.to_csv(output, header=True, index=False, sep='\t', mode='a')
     return 0
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

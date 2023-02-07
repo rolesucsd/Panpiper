@@ -1,0 +1,51 @@
+[2023-01-25 12:54:01] INFO: CheckM v1.1.3
+[2023-01-25 12:54:01] INFO: checkm lineage_wf -t 20 -x fna /panfs/roles/BF/Quality/Assembly_filter/363192097_S260_L001 /panfs/roles/BF/Quality/Assembly_filter/363192097_S260_L001
+[2023-01-25 12:54:01] INFO: [CheckM - tree] Placing bins in reference genome tree.
+[2023-01-25 12:54:01] INFO: Identifying marker genes in 1 bins with 20 threads:
+    Finished processing 0 of 1 (0.00%) bins.    Finished processing 1 of 1 (100.00%) bins.
+[2023-01-25 12:54:45] INFO: Saving HMM info to file.
+[2023-01-25 12:54:45] INFO: Calculating genome statistics for 1 bins with 20 threads:
+    Finished processing 0 of 1 (0.00%) bins.    Finished processing 1 of 1 (100.00%) bins.
+[2023-01-25 12:54:45] INFO: Extracting marker genes to align.
+[2023-01-25 12:54:45] INFO: Parsing HMM hits to marker genes:
+    Finished parsing hits for 1 of 1 (100.00%) bins.
+[2023-01-25 12:54:45] INFO: Extracting 43 HMMs with 20 threads:
+    Finished extracting 0 of 43 (0.00%) HMMs.    Finished extracting 1 of 43 (2.33%) HMMs.    Finished extracting 2 of 43 (4.65%) HMMs.    Finished extracting 3 of 43 (6.98%) HMMs.    Finished extracting 4 of 43 (9.30%) HMMs.    Finished extracting 5 of 43 (11.63%) HMMs.    Finished extracting 6 of 43 (13.95%) HMMs.    Finished extracting 7 of 43 (16.28%) HMMs.    Finished extracting 8 of 43 (18.60%) HMMs.    Finished extracting 9 of 43 (20.93%) HMMs.    Finished extracting 10 of 43 (23.26%) HMMs.    Finished extracting 11 of 43 (25.58%) HMMs.    Finished extracting 12 of 43 (27.91%) HMMs.    Finished extracting 13 of 43 (30.23%) HMMs.    Finished extracting 14 of 43 (32.56%) HMMs.    Finished extracting 15 of 43 (34.88%) HMMs.    Finished extracting 16 of 43 (37.21%) HMMs.    Finished extracting 17 of 43 (39.53%) HMMs.    Finished extracting 18 of 43 (41.86%) HMMs.    Finished extracting 19 of 43 (44.19%) HMMs.    Finished extracting 20 of 43 (46.51%) HMMs.    Finished extracting 21 of 43 (48.84%) HMMs.    Finished extracting 22 of 43 (51.16%) HMMs.    Finished extracting 23 of 43 (53.49%) HMMs.    Finished extracting 24 of 43 (55.81%) HMMs.    Finished extracting 25 of 43 (58.14%) HMMs.    Finished extracting 26 of 43 (60.47%) HMMs.    Finished extracting 27 of 43 (62.79%) HMMs.    Finished extracting 28 of 43 (65.12%) HMMs.    Finished extracting 29 of 43 (67.44%) HMMs.    Finished extracting 30 of 43 (69.77%) HMMs.    Finished extracting 31 of 43 (72.09%) HMMs.    Finished extracting 32 of 43 (74.42%) HMMs.    Finished extracting 33 of 43 (76.74%) HMMs.    Finished extracting 34 of 43 (79.07%) HMMs.    Finished extracting 35 of 43 (81.40%) HMMs.    Finished extracting 36 of 43 (83.72%) HMMs.    Finished extracting 37 of 43 (86.05%) HMMs.    Finished extracting 38 of 43 (88.37%) HMMs.    Finished extracting 39 of 43 (90.70%) HMMs.    Finished extracting 40 of 43 (93.02%) HMMs.    Finished extracting 41 of 43 (95.35%) HMMs.    Finished extracting 42 of 43 (97.67%) HMMs.    Finished extracting 43 of 43 (100.00%) HMMs.
+[2023-01-25 12:54:46] INFO: Aligning 43 marker genes with 20 threads:
+    Finished aligning 0 of 43 (0.00%) marker genes.    Finished aligning 1 of 43 (2.33%) marker genes.    Finished aligning 2 of 43 (4.65%) marker genes.    Finished aligning 3 of 43 (6.98%) marker genes.    Finished aligning 4 of 43 (9.30%) marker genes.    Finished aligning 5 of 43 (11.63%) marker genes.    Finished aligning 6 of 43 (13.95%) marker genes.    Finished aligning 7 of 43 (16.28%) marker genes.    Finished aligning 8 of 43 (18.60%) marker genes.    Finished aligning 9 of 43 (20.93%) marker genes.    Finished aligning 10 of 43 (23.26%) marker genes.    Finished aligning 11 of 43 (25.58%) marker genes.    Finished aligning 12 of 43 (27.91%) marker genes.    Finished aligning 13 of 43 (30.23%) marker genes.    Finished aligning 14 of 43 (32.56%) marker genes.    Finished aligning 15 of 43 (34.88%) marker genes.    Finished aligning 16 of 43 (37.21%) marker genes.    Finished aligning 17 of 43 (39.53%) marker genes.    Finished aligning 18 of 43 (41.86%) marker genes.    Finished aligning 19 of 43 (44.19%) marker genes.    Finished aligning 20 of 43 (46.51%) marker genes.    Finished aligning 21 of 43 (48.84%) marker genes.    Finished aligning 22 of 43 (51.16%) marker genes.    Finished aligning 23 of 43 (53.49%) marker genes.    Finished aligning 24 of 43 (55.81%) marker genes.    Finished aligning 25 of 43 (58.14%) marker genes.    Finished aligning 26 of 43 (60.47%) marker genes.    Finished aligning 27 of 43 (62.79%) marker genes.    Finished aligning 28 of 43 (65.12%) marker genes.    Finished aligning 29 of 43 (67.44%) marker genes.    Finished aligning 30 of 43 (69.77%) marker genes.    Finished aligning 31 of 43 (72.09%) marker genes.    Finished aligning 32 of 43 (74.42%) marker genes.    Finished aligning 33 of 43 (76.74%) marker genes.    Finished aligning 34 of 43 (79.07%) marker genes.    Finished aligning 35 of 43 (81.40%) marker genes.    Finished aligning 36 of 43 (83.72%) marker genes.    Finished aligning 37 of 43 (86.05%) marker genes.    Finished aligning 38 of 43 (88.37%) marker genes.    Finished aligning 39 of 43 (90.70%) marker genes.    Finished aligning 40 of 43 (93.02%) marker genes.    Finished aligning 41 of 43 (95.35%) marker genes.    Finished aligning 42 of 43 (97.67%) marker genes.    Finished aligning 43 of 43 (100.00%) marker genes.
+[2023-01-25 12:54:48] INFO: Reading marker alignment files.
+[2023-01-25 12:54:48] INFO: Concatenating alignments.
+[2023-01-25 12:54:48] INFO: Placing 1 bins into the genome tree with pplacer (be patient).
+[2023-01-25 12:58:05] INFO: { Current stage: 0:04:04.108 || Total: 0:04:04.108 }
+[2023-01-25 12:58:05] INFO: [CheckM - lineage_set] Inferring lineage-specific marker sets.
+[2023-01-25 12:58:05] INFO: Reading HMM info from file.
+[2023-01-25 12:58:05] INFO: Parsing HMM hits to marker genes:
+    Finished parsing hits for 1 of 1 (100.00%) bins.
+[2023-01-25 12:58:05] INFO: Determining marker sets for each genome bin.
+    Finished processing 1 of 1 (100.00%) bins (current: 363192097_S260_L001).
+[2023-01-25 12:58:06] INFO: Marker set written to: /panfs/roles/BF/Quality/Assembly_filter/363192097_S260_L001/lineage.ms
+[2023-01-25 12:58:06] INFO: { Current stage: 0:00:00.670 || Total: 0:04:04.778 }
+[2023-01-25 12:58:06] INFO: [CheckM - analyze] Identifying marker genes in bins.
+[2023-01-25 12:58:06] INFO: Identifying marker genes in 1 bins with 20 threads:
+    Finished processing 0 of 1 (0.00%) bins.    Finished processing 1 of 1 (100.00%) bins.
+[2023-01-25 13:00:48] INFO: Saving HMM info to file.
+[2023-01-25 13:00:48] INFO: { Current stage: 0:02:41.933 || Total: 0:06:46.712 }
+[2023-01-25 13:00:48] INFO: Parsing HMM hits to marker genes:
+    Finished parsing hits for 1 of 1 (100.00%) bins.
+[2023-01-25 13:00:48] INFO: Aligning marker genes with multiple hits in a single bin:
+    Finished processing 0 of 1 (0.00%) bins.    Finished processing 1 of 1 (100.00%) bins.
+[2023-01-25 13:01:00] INFO: { Current stage: 0:00:12.454 || Total: 0:06:59.167 }
+[2023-01-25 13:01:00] INFO: Calculating genome statistics for 1 bins with 20 threads:
+    Finished processing 0 of 1 (0.00%) bins.    Finished processing 1 of 1 (100.00%) bins.
+[2023-01-25 13:01:00] INFO: { Current stage: 0:00:00.308 || Total: 0:06:59.475 }
+[2023-01-25 13:01:00] INFO: [CheckM - qa] Tabulating genome statistics.
+[2023-01-25 13:01:00] INFO: Calculating AAI between multi-copy marker genes.
+[2023-01-25 13:01:00] INFO: Reading HMM info from file.
+[2023-01-25 13:01:00] INFO: Parsing HMM hits to marker genes:
+    Finished parsing hits for 1 of 1 (100.00%) bins.
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Bin Id                     Marker lineage        # genomes   # markers   # marker sets   0    1    2    3   4   5+   Completeness   Contamination   Strain heterogeneity  
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  363192097_S260_L001   g__Bacteroides (UID2691)       33         839           309        4   752   77   6   0   0       99.14            8.46               0.00          
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[2023-01-25 13:01:01] INFO: { Current stage: 0:00:00.492 || Total: 0:06:59.968 }

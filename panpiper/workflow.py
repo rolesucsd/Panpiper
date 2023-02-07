@@ -13,7 +13,9 @@ import os
 import subprocess
 import logging
 import glob
-import shlex, subprocess
+import shlex
+import subprocess
+
 
 class Workflow(object):
 
@@ -25,12 +27,12 @@ class Workflow(object):
         """
         Construct the snakemake command based off user-defined parameters
         Will produce a command, cmd, which will be launched
-        
+
         Parameters 
         ----------
         self: object, required
         Contains the parameters defined by the user
-        
+
         snakefile: string, required
         The snakefile selected for the desired operation
         """
@@ -53,14 +55,14 @@ class Workflow(object):
                'genes='+self.genes,
                'pheno='+self.pheno,
                'params='+self.params]
-        
+
         # If run on server
         if self.cluster_config == None:
             cmd += ['--cores', str(self.max_cores)]
 
         # If run on a cluster
         else:
-            
+
             # Make logging dirs
             if self.cluster_type in ('qsub', 'slurm'):
                 try:
@@ -71,9 +73,9 @@ class Workflow(object):
             # Add cluster info to snakemake command
             cmd += ['--jobs', str(self.max_jobs),
                     '--local-cores', str(self.max_cores)]
-                
-        if self.cluster_type == 'qsub' or  self.cluster_type == 'slurm':
-            
+
+        if self.cluster_type == 'qsub' or self.cluster_type == 'slurm':
+
             cluster_cmd = ['--cluster-config', self.cluster_config]
             cluster_args_mod = '"' + self.cluster_args + '"'
             cluster_cmd += [' --cluster ', cluster_args_mod]
@@ -98,11 +100,12 @@ class Workflow(object):
         args = shlex.split(' '.join(cmd))
 
         # Run the snakemake workflow
-        process = subprocess.Popen(args, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, text=True)
+        process = subprocess.Popen(
+            args, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, text=True)
         if self.log_lvl == 'DEBUG':
             for line in iter(process.stdout.readline, ""):
                 logging.debug(line.strip())
-        
+
         process.wait()
         logging.debug('Snakemake returncode: '+str(process.returncode))
 

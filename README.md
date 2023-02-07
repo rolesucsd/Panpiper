@@ -65,10 +65,10 @@ panpiper -w pangenome  -o {ouput directory} -a {fasta directory} -s  {sample lis
 ```
 
 ### Genome-wide association study: 
-
+The gene and structure presence/absence files should be the result of Panaroo or Roary - from Panaroo this is the .RTab file. The unitig file is a result of unitig-caller; this file should be gzipped. The tree file can be any newick tree - if this pipeline has been followed to this point, we would recommend the tree file from iqtree. Finally, the reference file is a tab-delimited list of files to be used for unitig annotation. The format is file.fna file.gff2 {draft, ref}. 
 
 ```sh
-panpiper -w pyseer  -o {ouput directory} -g {gene presence absence file} -p {structure presence absence file} -u {unitig file} -t {tree file from iqtree} -r {reference fasta file}
+panpiper -w pyseer  -o {ouput directory} -g {gene presence absence file} -p {structure presence absence file} -u {unitig file} -t {tree file from iqtree} -r {reference file}
 ```
 
 

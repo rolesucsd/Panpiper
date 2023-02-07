@@ -6,7 +6,8 @@
 # The full license is in the file COPYING.txt, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import sys, getopt
+import sys
+import getopt
 import os
 import numpy as np
 import pandas as pd
@@ -37,25 +38,27 @@ def checkm_filter(sample_list, file, completeness, contamination):
     The samples that passed the filters at this step returned as a list
 
     sample_fail: dataframe
-    The samples that failed the filtes at this step returned as a dataframe which contain information about why they failed
+    The samples that failed the filtes at this step returned 
     """
 
     # Reads the checkm text file
     df = pd.read_csv(file, sep='\t', header=0)
     # Includes completeness, contamination, and strain heterogeneity
     # Filter dataframe
-    # For each row in the dataframe, only include a sample in a list 
+    # For each row in the dataframe, only include a sample in a list
     # If it is above a certain value in each of the three categories
     # Completion above 95, Contamination below 5
     df_pass = df[df["Completeness"] >= completeness]
-    df_pass = df_pass[df_pass["Contamination"] <= contamination] 
+    df_pass = df_pass[df_pass["Contamination"] <= contamination]
     # Return the list of samples
     sample_pass = df_pass["Bin_ID"].tolist()
     sample_pass = [*set(sample_pass)]
-    
+
     # Return the failed samples as a dataframe
-    sample_fail = df[(df["Completeness"] < completeness) | (df["Contamination"] > contamination)]
-    return sample_pass, sample_fail 
+    sample_fail = df[(df["Completeness"] < completeness) |
+                     (df["Contamination"] > contamination)]
+    return sample_pass, sample_fail
+
 
 def checkm_stats_filter(sample_list, file, genome_size, contig_number, N50, GC):
     """
@@ -92,20 +95,20 @@ def checkm_stats_filter(sample_list, file, genome_size, contig_number, N50, GC):
 
     # Reads the checkm text file
     df = pd.read_csv(file, sep='\t', header=0)
-    # For each row in the dataframe, only include a sample in a list 
+    # For each row in the dataframe, only include a sample in a list
     # If it is above a certain value in each of the categories
     # Genome size within 50% of ref, Contig num below input, N50 above 1e5, GC within 30% of ref
     mini = genome_size-genome_size*.5
     maxi = genome_size+genome_size*.5
     print(mini, maxi)
     # Subset the dataframe for the failed samples
-    sample_fail = df[(df["contigs"] > contig_number) | (df["N50 contigs"] < N50) | (df["Genome size"] < int(mini)) | 
-        (df["Genome size"] > int(maxi)) | (df["GC"] > (GC+GC*.1)/100) | (df["GC"] < (GC-GC*.1)/100)]
+    sample_fail = df[(df["contigs"] > contig_number) | (df["N50 contigs"] < N50) | (df["Genome size"] < int(mini)) |
+                     (df["Genome size"] > int(maxi)) | (df["GC"] > (GC+GC*.1)/100) | (df["GC"] < (GC-GC*.1)/100)]
 
     df = df[df["contigs"] <= contig_number]
     df = df[df["N50 contigs"] >= N50]
     if genome_size != 0:
-        df = df[df["Genome size"] >= int(mini)] 
+        df = df[df["Genome size"] >= int(mini)]
         df = df[df["Genome size"] <= int(maxi)]
     df = df[df["GC"] <= (GC+GC*.1)/100]
     df = df[df["GC"] >= (GC-GC*.1)/100]
@@ -113,6 +116,7 @@ def checkm_stats_filter(sample_list, file, genome_size, contig_number, N50, GC):
     sample_list = df["Sample"].tolist()
     sample_list = [*set(sample_list)]
     return sample_list, sample_fail
+
 
 def ani_filter(sample_list, file, ani, reference):
     """
@@ -140,25 +144,26 @@ def ani_filter(sample_list, file, ani, reference):
     sample_fail: dataframe
     The samples that failed the filtes at this step returned as a dataframe which contain information about why they failed
     """
-    
+
     # Reads the ani text file
     df = pd.read_csv(file, sep='\t', header=None, index_col=None)
-    df = df.fillna(value = 0)
+    df = df.fillna(value=0)
     df.set_axis(["sample", "reference", "ani", "contig1", "contig2"],
-                    axis=1,inplace=True)
+                axis=1, inplace=True)
     df["sample"] = df["sample"].apply(os.path.basename)
     df["reference"] = df["reference"].apply(os.path.basename)
     df["reference"] = df["reference"].str.replace(".fna", "")
     df["sample"] = df["sample"].str.replace(".fna", "")
     # Filter dataframe based off first column, select sample
-    # Only add samples to the list if they are above 95% in the third column 
+    # Only add samples to the list if they are above 95% in the third column
     df_pass = df[df["ani"] >= ani]
     sample_fail = df.loc[df["ani"] < ani]
     # Add the samples from the second column to the list
-    # Return the list of samples by APPENDING TO LIST 
+    # Return the list of samples by APPENDING TO LIST
     sample_list = df_pass["sample"].tolist()
     sample_list = [*set(sample_list)]
     return sample_list, sample_fail
+
 
 if __name__ == "__main__":
     sample_list, checkm_list, ani_list = [], [], []
@@ -185,11 +190,14 @@ if __name__ == "__main__":
     if args.outpath:
         # create a file with the names of all the fastas in it
         if args.log:
-            checkm_list, checkm_fail = checkm_filter(sample_list,args.log,args.completeness,args.contamination)
+            checkm_list, checkm_fail = checkm_filter(
+                sample_list, args.log, args.completeness, args.contamination)
         if args.ani:
-            ani_list, ani_fail = ani_filter(sample_list,args.ani,args.ani_cuttoff,args.reference)
+            ani_list, ani_fail = ani_filter(
+                sample_list, args.ani, args.ani_cuttoff, args.reference)
         if args.stat:
-            stats_list, stats_fail = checkm_stats_filter(sample_list,args.stat,args.genome_size,args.contig_number,args.N50,args.GC)
+            stats_list, stats_fail = checkm_stats_filter(
+                sample_list, args.stat, args.genome_size, args.contig_number, args.N50, args.GC)
         # Now I want to just keep the duplicates
         checkm_list += ani_list
         checkm_list += stats_list
@@ -203,11 +211,12 @@ if __name__ == "__main__":
             elif i not in sample_list:
                 sample_list += [i]
         # merge dataframes of failed samples
-        checkm_fail = checkm_fail.rename(columns = {'Bin_ID':'Sample'})
-        checkm_fail = pd.merge(checkm_fail, stats_fail, on = ['Sample'], how = 'outer')
+        checkm_fail = checkm_fail.rename(columns={'Bin_ID': 'Sample'})
+        checkm_fail = pd.merge(checkm_fail, stats_fail,
+                               on=['Sample'], how='outer')
         if len(args.outpath) > 0:
             passed = args.outpath + "/sample_list.txt"
             with open(passed, mode='wt', encoding='utf-8') as myfile:
                 myfile.write('\n'.join(sample_list))
-        checkm_fail.to_csv(args.outpath+'/failed_samples_checkm.csv', sep ='\t')
-        ani_fail.to_csv(args.outpath+'/failed_samples_ani.csv', sep ='\t')
+        checkm_fail.to_csv(args.outpath+'/failed_samples_checkm.csv', sep='\t')
+        ani_fail.to_csv(args.outpath+'/failed_samples_ani.csv', sep='\t')

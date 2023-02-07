@@ -11,8 +11,9 @@ import logging
 import sys
 import pkg_resources
 import re
-#import Path
 from Bio import SeqIO
+import gzip
+
 
 class Controller(object):
     """
@@ -20,15 +21,17 @@ class Controller(object):
     """
 
     def __init__(self, ap):
-     
+
         args = ap.parse_args()
 
-        for k,v in args.__dict__.items():
+        for k, v in args.__dict__.items():
             setattr(self, k, v)
-        
+
         # Logger
-        logging.basicConfig(format='\033[36m'+'[%(asctime)s] %(levelname)s:'+'\033[0m'+' %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=self.log_lvl)
-        logging.info('Running Panpiper version {}'.format(pkg_resources.require("panpiper")[0].version))
+        logging.basicConfig(format='\033[36m'+'[%(asctime)s] %(levelname)s:' +
+                            '\033[0m'+' %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=self.log_lvl)
+        logging.info('Running Panpiper version {}'.format(
+            pkg_resources.require("panpiper")[0].version))
 
         # Force consistency
         self.output = os.path.join(self.output, '')
@@ -37,11 +40,13 @@ class Controller(object):
         # TODO: update to check cluster information
         if self.cluster_type is not None:
             if self.cluster_args is not None:
-                if len(re.findall('{cluster.mem}|{cluster.time}|{cluster.cpus}', self.cluster_args)) != 3: 
-                    logging.error('cluster_args has to contain the following special strings: {cluster.cpus}, {cluster.mem}, and {cluster.time}')
+                if len(re.findall('{cluster.mem}|{cluster.time}|{cluster.cpus}', self.cluster_args)) != 3:
+                    logging.error(
+                        'cluster_args has to contain the following special strings: {cluster.cpus}, {cluster.mem}, and {cluster.time}')
                     sys.exit()
             else:
-                logging.error('cluster_args is required when running on a compute cluster')
+                logging.error(
+                    'cluster_args is required when running on a compute cluster')
                 sys.exit()
 
         # Check input, params, and output
@@ -88,10 +93,9 @@ class Controller(object):
             if file.endswith(".fastq"):
                 logging.debug('Fastq files found')
                 return()
-        
-        logging.error('No fastq files found in directory')
-        sys.exit()        
 
+        logging.error('No fastq files found in directory')
+        sys.exit()
 
     def check_reference(self):
         """
@@ -107,7 +111,7 @@ class Controller(object):
         """
         logging.debug('Checking reference fasta file')
 
-        try: 
+        try:
             with open(self.reference, "r") as handle:
                 fasta = SeqIO.parse(handle, "fasta")
         except Exception:
@@ -117,39 +121,54 @@ class Controller(object):
         if not (fasta):
             logging.error('Reference fasta file not in fasta format')
             sys.exit()
-            
+
     def check_list(self):
         """
         Checks sample list file for fasta file list 
         """
         logging.debug('Checking sample list file')
-        
+
         with open(self.sample_list, 'r') as fh:
             for line in fh:
                 if not os.path.join(self.fasta, line, ".fa"):
-                    logging.error('Sample names not present in fasta directory')
+                    logging.error(
+                        'Sample names not present in fasta directory')
                     sys.exit()
 
-                    
     def check_pyseer(self):
-        # genes : gene_presence_absence.Rtab check if matrix
+        # genes : gene_presence_absence.Rtab check if exists
+        if not os.path.isfile(self.genes):
+            logging.error('Gene presence/absence file does not exist')
+            sys.exit()
 
-        # structure : struct_presence_absence.Rtab check if matrix
-        
-        # unitig : unitig.pyseer.gz check that it's zipped 
+        # structure : struct_presence_absence.Rtab check if exists
+        if not os.path.isfile(self.structure):
+            logging.error('Structure presence/absence file does not exist')
+            sys.exit()
 
-        # tree : iqtree.nwk check if in newick format 
+        # unitig : unitig.pyseer.gz check that it's zipped
+        with gzip.open(self.unitig, 'r') as fh:
+            try:
+                fh.read(1)
+            except gzip.BadGzipFile:
+                print('Unitig is a bad gzip file')
+                sys.exit()
 
-        # reference : check if file in text can be found 
+        # tree : iqtree.nwk check if in newick format
+        if not os.path.isfile(self.tree):
+            logging.error('Tree file does not exist')
+            sys.exit()
+
+        # reference : check if file in text can be found
+
 
         # pheno : check if file has sample name as first column
-        
 
     def write_params(self, args):
         """
         Add parameters to params to snakemake file 
         """
-        
+
         pars = vars(args)
         self.params = self.output+'parameters.tab'
         fh = open(self.params, 'w')
