@@ -20,6 +20,5 @@ output <- args[2]
 
 file <- read.delim(input, header = TRUE, check.names = FALSE)
 file$bh_pv_adj <- p.adjust(file$`lrt-pvalue`, method = "BH", n = nrow(file))
-file$bh_pv_adj <-file[file$bh_pv_adj <= 0.1,]
 file <- file[order(file$bh_pv_adj),]
 write.table(file,output,quote=FALSE,col.names = TRUE,row.names = FALSE, sep="\t")
