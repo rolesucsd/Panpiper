@@ -11,3 +11,4 @@ slurm*
 bash.sh
 assembly_slurm/
 quality_slurm/
+cluster.json

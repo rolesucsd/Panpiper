@@ -19,7 +19,7 @@ from os.path import join, dirname, basename
 from shutil import copyfile
 from argparse import RawTextHelpFormatter
 
-from panpiper.controller import Controller
+from panpiper.test import Test
 from panpiper.workflow import Workflow
 
 # Snakefiles
@@ -117,7 +117,7 @@ def cli():
         '--pheno_column', help='The column in the phenotype file to use for the association study', type=str)
 
     ########## Workflow ##########
-    master = Controller(ap)
+    master = Test(ap)
 
     wf = Workflow(master)
 
