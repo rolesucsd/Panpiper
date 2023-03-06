@@ -53,11 +53,11 @@ panpiper -w assembly -o {output directory} -q {fastq directory}
 ```
 
 Output:  
-Assembly/  
-    incomplete_assembly_files.txt - samples for which assembly failed
-    complete_assembly_files.txt - samples for which assemblies passed 
-    {sample}/  
-        contigs.fa - edited assembly 
+* Assembly/  
+    * incomplete_assembly_files.txt - samples for which assembly failed
+    *  complete_assembly_files.txt - samples for which assemblies passed 
+    * {sample}/  
+        * contigs.fa - edited assembly 
 
 ### Quality control: 
 The fasta file directory should contain a subdirectory for each sample where the subdirectory name is the sample of the sample. The fasta file within these directories should be formatted as contigs.fa. This is the standard output from Shovill. The sample list should have one sample name per line which corresponds to the directory names. The reference fasta file should be the representative strain of the species which the samples will be compared to using average nucleotide identity.
