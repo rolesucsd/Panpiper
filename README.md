@@ -54,13 +54,10 @@ panpiper -w assembly -o {output directory} -q {fastq directory}
 
 Output:  
 Assembly/  
-    incomplete_assembly_files.txt  
-    complete_assembly_files.txt  
+    incomplete_assembly_files.txt - samples for which assembly failed
+    complete_assembly_files.txt - samples for which assemblies passed 
     {sample}/  
-        spades.fasta  
-        shovill.log  
-        contigs.gfa  
-        contigs.fa  
+        contigs.fa - edited assembly 
 
 ### Quality control: 
 The fasta file directory should contain a subdirectory for each sample where the subdirectory name is the sample of the sample. The fasta file within these directories should be formatted as contigs.fa. This is the standard output from Shovill. The sample list should have one sample name per line which corresponds to the directory names. The reference fasta file should be the representative strain of the species which the samples will be compared to using average nucleotide identity.
@@ -70,26 +67,20 @@ panpiper -w quality -o {ouput directory} -a {fasta directory} -s  {sample list} 
 ```
 
 Output:  
-Quality/  
-    sample_list.txt  
-    failed_samples_checkm.csv  
-    failed_samples_ani.csv  
-    quality_report.html  
-    CheckM/  
-        checkm_stats.txt  
-        checkm_log.txt  
-        checkm_log_filter.txt  
-    FastANI/  
-        fastani_summary.txt  
-        fastani_reformat.csv  
-    Assembly_filter/  
-        {sample}/  
-            lineage.log  
-            checkm.log  
-            lineage.ms  
-            {sample}.fna  
-            storage/  
-            bins/  
+* Quality/  
+    * sample_list.txt - samples which passed all requirements
+    * failed_samples_checkm.csv  - samples which did not meet checkM thresholds
+    * failed_samples_ani.csv  - samples which did not meet ANI threshold
+    * quality_report.html - html to view the summary of quality of assemblies
+    * CheckM/  
+        * checkm_stats.txt - statistics summary of assemblies
+        * checkm_log.txt  - summary of contamination, completeness, and strain heterogeneity
+        * checkm_log_filter.txt - reformat and filter of checkm_log.txt
+    * FastANI/
+        * fastani_summary.txt - lists percent identity of each sample to the reference
+        * fastani_reformat.csv - reformat of the same file 
+    * Assembly_filter/  
+        * {sample}/ - includes the filtered fasta files removing contigs less than 500bp and all CheckM information
 
 ### Pangenome: 
 The fasta file directory should contain a subdirectory for each sample where the subdirectory name is the sample of the sample. The fasta file within these directories should be formatted as contigs.fa. This is the standard output from Shovill. The sample list should have one sample name per line which corresponds to the directory names. The reference fasta file should be the representative strain of the species which the samples will be compared to using average nucleotide identity.
@@ -99,30 +90,27 @@ panpiper -w pangenome  -o {ouput directory} -a {fasta directory} -s  {sample lis
 ```
 
 Output:  
-Pangenome/  
-    Bakta/  
-        {sample}/  
-    Unitig/  
-        unitig.pyseer.gz  
-    Phylogeny/  
-    Panaroo/  
-    AMR/  
-    Kraken/  
-    Phylogroups/  
-    Summary/  
-        AMR.txt  
-        amr.png  
-        amr_wide.txt  
-        core_gene_alignment.aln.iqtree  
-        db_clusters.csv  
-        krakn_ag.txt  
-        mash.msh  
-        mash.tsv  
-        pan_genome_reference.faa  
-        pan_genome_reference.tsv  
-        Summary.emapper.annotations  
-        Summary.emmapper.hits  
-        Summary.emapper.seed_orthologs  
+* Pangenome/  
+    * Bakta/  
+        * {sample}/ - contains Bakta output for each sample
+    * Unitig/  
+        * unitig.pyseer.gz - the full unitig summary of all samples
+    * Phylogeny/ - contains the intermediate trees 
+    * Panaroo/ - contains the full pangenome summary as well as Bakta annotation for the pangenome
+    * AMR/ - contains the full AMR report for each sample
+    * Kraken/ - contains the full Kraken report for each sample
+    * Phylogroups/ - contains the full division process for phylogroups
+    * Summary/  
+        * AMR.txt - the summary of AMR hits
+        * amr.png - visualization of AMR as a heatmap
+        * amr_wide.txt - reformat of AMR hits from long to wide
+        * core_gene_alignment.aln.iqtree - the final nwk tree
+        * db_clusters.csv - the final phylogroup clusters
+        * krakn_ag.txt - the full kraken summary
+        * mash.tsv - the full mash distance matrix 
+        * pan_genome_reference.faa - all the proteins in the pangenome
+        * pan_genome_reference.tsv - the list of all proteins in the pangenome
+        * Summary.emapper.annotations - Eggnog-Mapper annotation
 
 ### Genome-wide association study: 
 The gene and structure presence/absence files should be the result of Panaroo or Roary - from Panaroo this is the .RTab file. The unitig file is a result of unitig-caller; this file should be gzipped. The tree file can be any newick tree - if this pipeline has been followed to this point, we would recommend the tree file from iqtree. Finally, the reference file is a tab-delimited list of files to be used for unitig annotation. The format is file.fna file.gff2 {draft, ref}. 
@@ -132,19 +120,17 @@ panpiper -w pyseer  -o {ouput directory} -g {gene presence absence file} -p {str
 ```
 
 Output:   
-    Pyseer/  
-        {variable_name}/  
-            unitig_patterns.txt  
-            unitig_pattern_count.txt  
-            unitig_gene_hits.txt  
-            unitig_annotation.txt  
-            unitig-txt  
-            struct_analysis.txt  
-            significant_unitig.txt  
-            significant_structure.txt  
-            significant_genes.txt  
-            phylogeny_similarity.tsv  
-            gene_analysis.txt  
+* Pyseer/  
+    * {variable_name}/  
+        * unitig_pattern_count.txt - a summary of tests conducted for p-value correction
+        * unitig_gene_hits.txt - the genes which significant unitig hits match to
+        * unitig.txt - the association study results for each unitig
+        * significant_unitig.txt - the unitig.txt file filtered for significance 
+        * struct_analysis.txt - the associtaiton study results for each structural variant
+        * significant_structure.txt - the structural variant results filtered for significance
+        * gene_analysis.txt - the associtaiton study results for each gene 
+        * significant_genes.txt - the gene results filtered for significance
+        * phylogeny_similarity.tsv - a matrix of similarity to use as a covariate to correct for population structure in the model
 
 ### Run on a compute cluster
 To run on a compute cluster, the cluster type needs to be specified (ie "slurm" below). In addition a "cluster.json" file must be provided which specifies details such as cluster.account, cluster.mem, etc. The example below is a qsub example. 
