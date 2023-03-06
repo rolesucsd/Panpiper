@@ -49,48 +49,48 @@ class MainTest(TestCase):
 
     def test_assembly(self):
         exp = 0
-        obs = "panpiper --dry_run -o " +self.outpath+ " -w assembly -q " +self.fastq
-        self.assertEqual(obs, exp)
+        obs = ['--dry_run', '-o', self.outpath, '-w', 'assembly', '-q', self.fastq]
+        self.assertEqual(main.cli(), exp)
 
     def test_quality(self):
         exp = 0
-        obs = "panpiper --dry_run -o " + self.outpath+ " -a " +self.assembly1+ " -s "  +self.list1+ " -r " +self.reference+ "-w quality" 
-        self.assertEqual(obs, exp)
+        obs = ['--dry_run', '-o', self.outpath, '-w', 'quality', '-a', self.assembly1, '-s', self.list1, '-r', self.reference]
+        self.assertEqual(main.cli(), exp)
 
     def test_pangenome(self):
         exp = 0
-        obs = "panpiper --dry_run -o " + self.outpath+ " -a " +self.assembly2+ " -s "  +self.list2+ " -r " +self.reference+ "-w pangenome"
-        self.assertEqual(obs, exp)
+        obs = ['--dry_run', '-o', self.outpath, '-w', 'pangenome', '-a', self.assembly2, '-s', self.list2, '-r', self.reference]
+        self.assertEqual(main.cli(), exp)
 
     def test_wrong_assembly_quality(self):
         exp = 0
-        obs = "panpiper --dry_run -o " + self.outpath+ " -a " +self.assembly2+ " -s " +self.list1+ " -r " +self.reference+ "-w quality" 
-        self.assertEqual(obs, exp)
+        obs = ['--dry_run', '-o', self.outpath, '-w', 'quality', '-a', self.assembly2, '-s', self.list1, '-r', self.reference]
+        self.assertEqual(main.cli(), exp)
 
     def test_wrong_assembly_pangenome(self):
         exp = 0
-        obs = "panpiper --dry_run -o " + self.outpath+ " -a " +self.assembly1+ " -s " +self.list2+ " -r " +self.reference+ "-w pangenome"
-        self.assertEqual(obs, exp)
+        obs = ['--dry_run', '-o', self.outpath, '-w', 'pangenome', '-a', self.assembly1, '-s', self.list2, '-r', self.reference]
+        self.assertEqual(main.cli(), exp)
 
     def test_no_outpath(self):
         exp = 0
-        obs = "panpiper -w assembly -q" +self.fastq  
-        self.assertEqual(obs, exp)
+        obs = ['--dry_run', '-w', 'assembly', '-q', self.fastq]
+        self.assertEqual(main.cli(), exp)
 
     def test_incorrect_input(self):
         exp = 0
-        obs = "panpiper --dry_run -o " +self.outpath+ " -q " +self.fastq+ " -s "  +self.list1+ " -r " +self.reference+ " -w quality" 
-        self.assertEqual(obs, exp)
+        obs = ['--dry_run', '-o', self.outpath, '-w', 'quality', '-q', self.fastq, '-s', self.list1, '-r', self.reference]
+        self.assertEqual(main.cli(), exp)
 
-    def test_no_refernce(self):
+    def test_no_reference(self):
         exp = 0
-        obs = "panpiper --dry_run -o " +self.outpath+ " -a " +self.assembly1+ " -s " +self.list1+ " -w quality"
-        self.assertEqual(obs, exp)
+        obs = ['--dry_run', '-o', self.outpath, '-w', 'quality', '-a', self.assembly1, '-s', self.list1]
+        self.assertEqual(main.cli(), exp)
 
     def test_empty_refernce(self):
         exp = 0
-        obs = "panpiper --dry_run -o " +self.outpath+ " -q " +self.fastq+ " -s "  +self.list1+ " -r " +self.reference_empty+ " -w quality"
-        self.assertEqual(obs, exp)
+        obs = ['--dry_run', '-o', self.outpath, '-w', 'quality', '-a', self.assembly1, '-s', self.list1, '-r', self.reference_empty]
+        self.assertEqual(main.cli(), exp)
 
 outpath = "test_data"
 fastq = "test_data/fastq"
@@ -104,5 +104,12 @@ reference_empty = "test_data/empty.fna"
 run = MainTest()
 run.setUp()
 run.test_unlock()
-
-
+run.test_assembly()
+run.test_quality()
+run.test_pangenome()
+run.test_wrong_assembly_quality()
+run.test_wrong_assembly_pangenome()
+run.test_no_outpath()
+run.test_incorrect_input()
+run.test_no_reference()
+run.test_empty_refernce()

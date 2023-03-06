@@ -60,7 +60,7 @@ def checkm_filter(sample_list, file, completeness, contamination):
     return sample_pass, sample_fail
 
 
-def checkm_stats_filter(sample_list, file, genome_size, contig_number, N50, GC):
+def checkm_stats_filter(sample_list, file, contig_number, N50):
     """
     Filter samples based off checkm parameters
 
@@ -72,17 +72,11 @@ def checkm_stats_filter(sample_list, file, genome_size, contig_number, N50, GC):
     file: string, required
     A string of the filename of the checkm output, the stat file
 
-    genome_size: int, required
-    An integer of the size of the reference genome, samples are filtered out if their genome size is drastically different
-
     contig_number: int, default = 1000
     An integer of the cutoff value at which to remove samples if their assembly is greater than 1000 contigs
 
     N50: int, default = 5000
     An integer of the max N50 value, samples are filtered out if they exceed this value
-
-    GC: int, required
-    An integer of the average GC content of this species, samples are filtered out if they vary too much from this value
 
     Returns
     ----------
@@ -107,18 +101,13 @@ def checkm_stats_filter(sample_list, file, genome_size, contig_number, N50, GC):
 
     df = df[df["contigs"] <= contig_number]
     df = df[df["N50 contigs"] >= N50]
-    if genome_size != 0:
-        df = df[df["Genome size"] >= int(mini)]
-        df = df[df["Genome size"] <= int(maxi)]
-    df = df[df["GC"] <= (GC+GC*.1)/100]
-    df = df[df["GC"] >= (GC-GC*.1)/100]
     # Return the list of samples and the the failed dataframe
     sample_list = df["Sample"].tolist()
     sample_list = [*set(sample_list)]
     return sample_list, sample_fail
 
 
-def ani_filter(sample_list, file, ani, reference):
+def ani_filter(sample_list, file, ani, reference, output):
     """
     Filter samples based off checkm parameters
 
@@ -146,7 +135,7 @@ def ani_filter(sample_list, file, ani, reference):
     """
 
     # Reads the ani text file
-    df = pd.read_csv(file, sep='\t', header=None, index_col=None)
+    df = pd.read_csv(file, sep='\t', header=0, index_col=None)
     df = df.fillna(value=0)
     df.set_axis(["sample", "reference", "ani", "contig1", "contig2"],
                 axis=1, inplace=True)
@@ -154,6 +143,7 @@ def ani_filter(sample_list, file, ani, reference):
     df["reference"] = df["reference"].apply(os.path.basename)
     df["reference"] = df["reference"].str.replace(".fna", "")
     df["sample"] = df["sample"].str.replace(".fna", "")
+    df.to_csv(output+'/fastani_reformat.csv', sep='\t')
     # Filter dataframe based off first column, select sample
     # Only add samples to the list if they are above 95% in the third column
     df_pass = df[df["ani"] >= ani]
@@ -180,11 +170,9 @@ if __name__ == "__main__":
     parser.add_argument("-sh", "--strain_heterogeneity", default=0, type=float)
     parser.add_argument("-ac", "--ani_cuttoff", default=85, type=float)
     parser.add_argument("-r", "--reference")
-    parser.add_argument("-g", "--genome_size", default=0, type=float)
     parser.add_argument("-cn", "--contig_number", default=1000, type=float)
     parser.add_argument("-n", "--N50", default=5000, type=float)
     parser.add_argument("-lf", "--L50", default=500, type=float)
-    parser.add_argument("-gc", "--GC", default=0, type=float)
     args = parser.parse_args()
     print(args)
     if args.outpath:
@@ -194,10 +182,10 @@ if __name__ == "__main__":
                 sample_list, args.log, args.completeness, args.contamination)
         if args.ani:
             ani_list, ani_fail = ani_filter(
-                sample_list, args.ani, args.ani_cuttoff, args.reference)
+                sample_list, args.ani, args.ani_cuttoff, args.reference, args.outpath)
         if args.stat:
             stats_list, stats_fail = checkm_stats_filter(
-                sample_list, args.stat, args.genome_size, args.contig_number, args.N50, args.GC)
+                sample_list, args.stat, args.contig_number, args.N50)
         # Now I want to just keep the duplicates
         checkm_list += ani_list
         checkm_list += stats_list

@@ -52,12 +52,44 @@ The fastq files should all be in a single directory. They need to be paired-end.
 panpiper -w assembly -o {output directory} -q {fastq directory} 
 ```
 
+Output:
+Assembly/
+    incomplete_assembly_files.txt
+    complete_assembly_files.txt
+    {sample}/
+        spades.fasta
+        shovill.log
+        contigs.gfa
+        contigs.fa
+
 ### Quality control: 
 The fasta file directory should contain a subdirectory for each sample where the subdirectory name is the sample of the sample. The fasta file within these directories should be formatted as contigs.fa. This is the standard output from Shovill. The sample list should have one sample name per line which corresponds to the directory names. The reference fasta file should be the representative strain of the species which the samples will be compared to using average nucleotide identity.
 
 ```sh
 panpiper -w quality -o {ouput directory} -a {fasta directory} -s  {sample list} -r {reference fasta file}
 ```
+
+Output:
+Quality/
+    sample_list.txt
+    failed_samples_checkm.csv
+    failed_samples_ani.csv
+    quality_report.html
+    CheckM/
+        checkm_stats.txt
+        checkm_log.txt
+        checkm_log_filter.txt
+    FastANI/
+        fastani_summary.txt
+        fastani_reformat.csv
+    Assembly_filter/
+        {sample}/
+            lineage.log
+            checkm.log
+            lineage.ms
+            {sample}.fna
+            storage/
+            bins/
 
 ### Pangenome: 
 The fasta file directory should contain a subdirectory for each sample where the subdirectory name is the sample of the sample. The fasta file within these directories should be formatted as contigs.fa. This is the standard output from Shovill. The sample list should have one sample name per line which corresponds to the directory names. The reference fasta file should be the representative strain of the species which the samples will be compared to using average nucleotide identity.
@@ -66,6 +98,32 @@ The fasta file directory should contain a subdirectory for each sample where the
 panpiper -w pangenome  -o {ouput directory} -a {fasta directory} -s  {sample list} -r {reference fasta file}
 ```
 
+Output:
+Pangenome/
+    Bakta/
+        {sample}/
+    Unitig/
+        unitig.pyseer.gz
+    Phylogeny/
+    Panaroo/
+    AMR/
+    Kraken/
+    Phylogroups/
+    Summary/
+        AMR.txt
+        amr.png
+        amr_wide.txt
+        core_gene_alignment.aln.iqtree
+        db_clusters.csv
+        krakn_ag.txt
+        mash.msh
+        mash.tsv
+        pan_genome_reference.faa
+        pan_genome_reference.tsv
+        Summary.emapper.annotations
+        Summary.emmapper.hits
+        Summary.emapper.seed_orthologs
+
 ### Genome-wide association study: 
 The gene and structure presence/absence files should be the result of Panaroo or Roary - from Panaroo this is the .RTab file. The unitig file is a result of unitig-caller; this file should be gzipped. The tree file can be any newick tree - if this pipeline has been followed to this point, we would recommend the tree file from iqtree. Finally, the reference file is a tab-delimited list of files to be used for unitig annotation. The format is file.fna file.gff2 {draft, ref}. 
 
@@ -73,6 +131,20 @@ The gene and structure presence/absence files should be the result of Panaroo or
 panpiper -w pyseer  -o {ouput directory} -g {gene presence absence file} -p {structure presence absence file} -u {unitig file} -t {tree file from iqtree} -r {reference file}
 ```
 
+Output:
+    Pyseer/
+        {variable_name}/
+            unitig_patterns.txt
+            unitig_pattern_count.txt
+            unitig_gene_hits.txt
+            unitig_annotation.txt
+            unitig-txt
+            struct_analysis.txt
+            significant_unitig.txt
+            significant_structure.txt
+            significant_genes.txt
+            phylogeny_similarity.tsv
+            gene_analysis.txt
 
 ### Run on a compute cluster
 To run on a compute cluster, the cluster type needs to be specified (ie "slurm" below). In addition a "cluster.json" file must be provided which specifies details such as cluster.account, cluster.mem, etc. The example below is a qsub example. 
@@ -80,4 +152,9 @@ To run on a compute cluster, the cluster type needs to be specified (ie "slurm" 
 ```sh
 panpiper ... --cluster_type slurm --cluster_config cluster.json --cluster_args "sbatch -A {cluster.account} --mem {cluster.mem} -t {cluster.time} --cpus-per-task {cluster.cpus}"
 ```
-    
+
+
+### Potential errors
+1. Kraken - "Error loading hash table" - you may need to request more memory 
+2. Kraken - database download errors - I suggest downloading the database manually as it can be very glitchy 
+

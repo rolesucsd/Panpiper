@@ -43,8 +43,7 @@ rule all:
         os.path.join(OUT,"significant_structure.txt"),
 #        os.path.join(OUT,"unitig_gene_hits_enet.txt"),
 
-# We will use the distances from the core genome phylogeny, which has been midpointed rooted:
-# TODO: check root of tree
+# We will use the distances from the core genome phylogeny, which has been midpointed rooted
 rule pyseer_TREE_to_matrix:
     input:
         TREE
@@ -55,7 +54,7 @@ rule pyseer_TREE_to_matrix:
     shell:
         "python panpiper/workflow/scripts/phylogeny_distance.py --lmm {input} > {output}"
 
-# TODO: May want to include covariates 
+# GENE ANALYSIS
 rule pyseer_gene_analysis:
     input:
         genes=GENES,
@@ -82,6 +81,7 @@ rule pyseer_filter_genes:
         Rscript panpiper/workflow/scripts/filter_genes.R {input} {output}
         """
 
+# STRUCTURE ANALYSIS
 rule pyseer_structure_analysis:
     input:
         panaroo=STRUCTURE,
@@ -108,6 +108,7 @@ rule pyseer_filter_strc:
         Rscript panpiper/workflow/scripts/filter_genes.R {input} {output}
         """
 
+# UNITIG ANALYSIS
 rule pyseer_unitig:
     input:
         phylo=os.path.join(OUT,"phylogeny_similarity.tsv"),
@@ -136,14 +137,14 @@ rule pyseer_patterns_unitig:
 
 rule pyseer_filter_unitig:
     input:
-        n=os.path.join(OUT,"unitig_pattern_count.txt"),
-        nxt=os.path.join(OUT,"unitig.txt"),
+        pattern=os.path.join(OUT,"unitig_pattern_count.txt"),
+        unitig=os.path.join(OUT,"unitig.txt"),
     conda:
         "envs/r.yml"
     output:
         os.path.join(OUT,"significant_unitig.txt"),
     shell:
-        "Rscript panpiper/workflow/scripts/filter_kmers.R {input.nxt} {output}"
+        "Rscript panpiper/workflow/scripts/filter_kmers.R {input.unitig} {input.pattern} {output}"
 
 
 rule annotate_unitig:
@@ -168,6 +169,7 @@ rule unitig_gene:
     shell:
         "python panpiper/workflow/scripts/summarise_annotations.py {input} > {output}"
 
+# UNITIG ANALYSIS ELASTIC NET
 rule pyseer_elastic_net:
     input:
         unitig=UNITIG,
@@ -178,11 +180,24 @@ rule pyseer_elastic_net:
         "envs/pyseer.yml"
     output:
         unitig=os.path.join(OUT,"unitig_enet.txt"),
+        patterns=os.path.join(OUT,"unitig_patterns_enet.txt"),
     shell:
-        "pyseer --wg enet --cpu 8 --phenotypes {params.pheno} --phenotype-column {params.pheno_col} --kmers {input.unitig} > {output}"
+        "pyseer --wg enet --cpu 8 --print-samples --phenotypes {params.pheno} --phenotype-column {params.pheno_col} --kmers {input.unitig} --output-patterns {output.patterns} > {output.unitig}"
+
+
+rule pyseer_patterns_unitig_elastic_net:
+    input:
+        os.path.join(OUT,"unitig_patterns_enet.txt"),
+    conda:
+        "envs/pyseer.yml"
+    output:
+        os.path.join(OUT,"unitig_pattern_count_enet.txt"),
+    shell:
+        "python panpiper/workflow/scripts/count_patterns.py {input} > {output}"
 
 rule pyseer_filter_unitig_elastic_net:
     input:
+        pattern=os.path.join(OUT,"unitig_pattern_count_enet.txt"),
         nxt=os.path.join(OUT,"unitig_enet.txt"),
     conda:
         "envs/r.yml"
@@ -190,7 +205,7 @@ rule pyseer_filter_unitig_elastic_net:
         unitig=os.path.join(OUT,"significant_unitig_enet.txt"),
     shell:
         """
-        Rscript panpiper/workflow/scripts/filter_kmers.R {input.nxt} {output}
+        Rscript panpiper/workflow/scripts/filter_kmers.R {input.nxt} {input.pattern} {output}
         """
 
 rule annotate_unitig_elastic_net:

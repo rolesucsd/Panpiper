@@ -30,6 +30,8 @@ rule shovill:
         tmp="tmp",
     log:
         os.path.join(OUT,"report/shovill_{file}.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/shovill_{file}.benchmark"),
     conda:
         "envs/shovill.yml"
     output:
@@ -46,7 +48,9 @@ rule move_complete:
     params:
         os.path.join(OUT, 'Assembly/')
     log:
-        os.path.join(OUT,"report/assembly_complete.log"),
+        os.path.join(OUT,"report/move_complete.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/move_complete.benchmark"),
     output:
         ASSEMBLY_OUT,
     shell:

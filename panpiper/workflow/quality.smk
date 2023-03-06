@@ -65,12 +65,14 @@ rule run_checkm:
     params:
         threads=40,
         binset=os.path.join(OUT,"Quality/Assembly_filter/{file}"),
-    output:
-        stats=os.path.join(OUT,"Quality/Assembly_filter/{file}/storage/bin_stats.analyze.tsv"),
     conda:
         "envs/checkm.yml"
     log:
         log=os.path.join(OUT,"Quality/Assembly_filter/{file}/lineage.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/checkm_{file}.benchmark"),    
+    output:
+        stats=os.path.join(OUT,"Quality/Assembly_filter/{file}/storage/bin_stats.analyze.tsv"),
     shell:
 #        echo ".snakemake/conda/checkm" | checkm data setRoot "../.snakemake/conda/checkm"
         """
@@ -83,13 +85,15 @@ rule checkm_to_graph:
         stats=expand(os.path.join(OUT,"Quality/Assembly_filter/{file}/storage/bin_stats.analyze.tsv"), file=READS),
     params:
         log=expand(os.path.join(OUT,"Quality/Assembly_filter/{file}/lineage.log"), file=READS),
-    output:
-        png=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
-        stats=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
     conda:
         "envs/r.yml"
     log:
         os.path.join(OUT,"report/checkm_graph.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/checkm_graph.benchmark"),    
+    output:
+        png=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
+        stats=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
     shell:
         """
         Rscript panpiper/workflow/scripts/checkm-log.R {params.log}  &> {log}
@@ -101,12 +105,14 @@ rule fastani:
     input:
         ref=REFERENCE,
         file=os.path.join(OUT,"Quality/Assembly_filter/{file}/{file}.fna"),
-    output:
-        os.path.join(OUT,"Quality/FastANI/{file}.txt"),
     conda:
         "envs/fastani.yml"
     log:
         os.path.join(OUT,"report/fastani_{file}.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/fastani_{file}.benchmark"),    
+    output:
+        temp(os.path.join(OUT,"Quality/FastANI/{file}.txt")),
     shell:
         "fastANI -q {input.file} -r {input.ref} -o {output} &> {log}"
 
@@ -115,7 +121,7 @@ rule fastani_concat:
     input:
         expand(os.path.join(OUT,"Quality/FastANI/{file}.txt"), file=READS),
     output:
-        txt=os.path.join(OUT,"Quality/FastANI/full.txt"),
+        txt=os.path.join(OUT,"Quality/FastANI/fastani_summary.txt"),
     shell:
         "cat {input} > {output}"
 
@@ -124,7 +130,7 @@ rule fastani_concat:
 # Need to edit this python file bc it's messy rn
 rule filter_files:
     input:
-        ani=os.path.join(OUT,"Quality/FastANI/full.txt"),
+        ani=os.path.join(OUT,"Quality/FastANI/fastani_summary.txt"),
         stat=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
     params:
         checkm=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
@@ -137,8 +143,11 @@ rule filter_files:
         n=N50,
     log:
         os.path.join(OUT,"report/filter_files.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/filter_files.benchmark"),    
     output:
         os.path.join(OUT,"Quality/sample_list.txt"),
+        os.path.join(OUT,"Quality/FastANI/ani_reformat.csv"),
     shell:
         """
         python panpiper/workflow/scripts/filter_isolates.py -o {params.outpath} -a {input.ani} -l {params.checkm} -s {input.stat} -r {params.ref} -gc {params.gc} -g {params.genome_size} -ac {params.ac} -cn {params.cn} -n {params.n} &> {log}
@@ -146,7 +155,7 @@ rule filter_files:
 
 rule print_results:
     input:
-        ani=os.path.join(OUT,"Quality/FastANI/full.txt"),
+        ani=os.path.join(OUT,"Quality/FastANI/ani_reformat.csv"),
         stat=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
         log=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
         passed=os.path.join(OUT,"Quality/sample_list.txt"),
@@ -156,7 +165,9 @@ rule print_results:
     conda:
         "envs/r.yml"
     log:
-        os.path.join(OUT,"report/print_files.log"),
+        os.path.join(OUT,"report/print_results.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/print_results.benchmark"),    
     output:
         SAMPLES_OUT,
     shell:

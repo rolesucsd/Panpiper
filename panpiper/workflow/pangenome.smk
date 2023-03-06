@@ -48,6 +48,8 @@ rule bakta:
         "envs/bakta.yml",
     log:
         os.path.join(OUT,"report/bakta_db.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/bakta.benchmark"),
     output:
         os.path.join(BAKTA, "bakta.db"),
     shell:
@@ -60,6 +62,8 @@ rule eggnog_db:
         "envs/eggnog.yml",
     log:
         os.path.join(OUT,"report/eggnog_db.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/eggnog_db.benchmark"),
     output:
         os.path.join(EGGNOG, "eggnog.db"),
     shell:
@@ -72,6 +76,8 @@ rule kraken_db:
         "envs/kraken.yml",
     log:
         os.path.join(OUT,"report/kraken_db.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/kraken_db.benchmark"),
     output:
         os.path.join(KRAKEN, "taxo.k2d"),
     shell:
@@ -87,6 +93,8 @@ rule setup:
         "envs/amrfinder.yml"
     log:
         os.path.join(OUT,"report/setup.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/setup.benchmark"),
     output:
         os.path.join(OUT,"Pangenome/Unitig/unitig.list"),
         os.path.join(OUT,"Pangenome/Phylogroups/poppunk.list"),
@@ -111,12 +119,15 @@ rule bakta_multiple:
         "envs/bakta.yml"
     log:
         os.path.join(OUT,"report/bakta_{file}.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/bakta_{file}.benchmark"),
     output:
         gen=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff3"),
         faa=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.faa"),
         fna=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.fna"),
     shell:
-        "bakta --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} --locus-tag {params.name} {input.gen} &> {log}"
+#        "bakta --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} --locus-tag {params.name} {input.gen} &> {log}"
+        "bakta --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} {input.gen} &> {log}"
 
 
 # Panaroo is an updated version of Roary to create a pangenome
@@ -126,10 +137,12 @@ rule panaroo:
         gen=expand(os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff3"), file=filtered),
     params:
         os.path.join(OUT,"Pangenome/Panaroo"),
-    log:
-        os.path.join(OUT,"report/panaroo.log"),
     conda:
         "envs/panaroo.yml"
+    log:
+        os.path.join(OUT,"report/panaroo.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/panaroo.benchmark"),
     output:
         os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
         os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
@@ -158,6 +171,8 @@ rule bakta_pan:
         "envs/bakta.yml"
     log:
         os.path.join(OUT,"report/bakta_pan.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/bakta_pan.benchmark"),
     output:
         fna=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.tsv"),
     shell:
@@ -176,6 +191,8 @@ rule bwa_index_pan:
         "envs/bwa.yml"
     log:
         os.path.join(OUT,"report/bwa_index_pan.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/bwa_index_pan.benchmark"),
     output:
         os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.bwt"),
     shell:
@@ -192,6 +209,8 @@ rule fasttree:
         "envs/fasttree.yml"
     log:
         os.path.join(OUT,"report/fasttree.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/fasttree.benchmark"),
     resources:
         mem_mb=500000,
     output:
@@ -207,10 +226,12 @@ rule raxml:
         aln=os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
     params:
         outdir=os.path.join(OUT,"Pangenome/Phylogeny"),
+    conda:
+        "envs/raxml.yml",
     log:
         os.path.join(OUT,"report/raxml.log"),
-    conda:
-        "envs/raxml.yml"
+    benchmark:
+        os.path.join(OUT,"benchmark/raxml.benchmark"),
     output:
         os.path.join(OUT,"Pangenome/Phylogeny/RAxML_result.tree2"),
     shell:
@@ -230,6 +251,8 @@ rule iqtree:
         "envs/iqtree.yml"
     log:
         os.path.join(OUT,"report/iqtree.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/iqtree.benchmark"),
     output:
         os.path.join(OUT,"Pangenome/Summary/core_gene_alignment.aln.iqtree"),
     shell:
@@ -250,6 +273,8 @@ rule amrfinder:
         "envs/amrfinder.yml"
     log:
         os.path.join(OUT,"report/amrfinder_{file}.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/armfinder_{file}.benchmark"),
     output:
         os.path.join(OUT,"Pangenome/AMR/{file}.txt"),
     shell:
@@ -263,6 +288,8 @@ rule concat_amr:
         expand(os.path.join(OUT,"Pangenome/AMR/{file}.txt"), file=filtered),
     log:
         os.path.join(OUT,"report/concat_amr.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/concat_amr.benchmark"),
     output:
         os.path.join(OUT,"Pangenome/Summary/AMR.txt"),
     shell:
@@ -279,6 +306,8 @@ rule graph_amr:
         "envs/r.yml"
     log:
         os.path.join(OUT,"report/graph_amr.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/graph_amr.benchmark"),
     output:
         os.path.join(OUT,"Pangenome/Summary/amr.png"),
     shell:
@@ -295,6 +324,8 @@ rule poppunk_sketch:
         "envs/poppunk.yml"
     log:
         os.path.join(OUT,"report/poppunk_sketch.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/poppunk_sketch.benchmark"),
     output:
         os.path.join(OUT,"Pangenome/Phylogroups/db/db.dists.pkl"),
     shell:
@@ -311,6 +342,8 @@ rule poppunk_qc:
         "envs/poppunk.yml"
     log:
         os.path.join(OUT,"report/poppunk_qc.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/poppunk_qc.benchmark"),
     output:
         os.path.join(OUT,"Pangenome/Phylogroups/db/poppunk.txt"),
     shell:
@@ -328,6 +361,8 @@ rule poppunk_fit:
         "envs/poppunk.yml"
     log:
         os.path.join(OUT,"report/poppunk_fit.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/poppunk_fit.benchmark"),
     output:
         os.path.join(OUT,"Pangenome/Summary/db_clusters.csv"),
     shell:
@@ -348,6 +383,8 @@ rule eggnog_mapper:
         "envs/eggnog.yml"
     log:
         os.path.join(OUT,"report/eggnog_mapper.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/eggnog_mapper.benchmark"),
     output:
         os.path.join(OUT,"Pangenome/Summary/Summary.emapper.annotations"),
     shell:
@@ -365,6 +402,8 @@ rule kraken:
         "envs/kraken.yml"
     log:
         os.path.join(OUT,"report/kraken_{file}.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/kraken_{file}.benchmark"),
     output:
         out=os.path.join(OUT,"Pangenome/Kraken/{file}.out"),
         report=os.path.join(OUT,"Pangenome/Kraken/{file}.report")
@@ -381,6 +420,8 @@ rule kraken_reformat:
         outpath=os.path.join(OUT,"Pangenome/Kraken"),
     log:
         os.path.join(OUT,"report/kraken_reformat_{file}.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/kraken_reformat_{file}.benchmark"),
     output:
         report=os.path.join(OUT,"Pangenome/Kraken/{file}_reformat.txt"),
     shell:
@@ -407,6 +448,8 @@ rule unitig:
         "envs/unitig.yml"
     log:
         os.path.join(OUT,"report/unitig.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/unitig.benchmark"),
     output:
         os.path.join(OUT,"Pangenome/Unitig/unitig.pyseer"),
     shell:

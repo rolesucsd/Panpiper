@@ -96,10 +96,6 @@ def cli():
     # Parameters
     # Defaults set for Bacteroides fragilis
     app = ap.add_argument_group('parameters')
-    app.add_argument(
-        '--gc', help='GC content of species of interest', default=43.19, type=float)
-    app.add_argument(
-        '--genome_size', help='Genome size of species of interest', default=5205140, type=int)
     app.add_argument('--ref', help='Name of reference',
                      default="9343", type=str)
     app.add_argument(

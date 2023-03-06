@@ -23,7 +23,7 @@ library(plotly)
 ```{r,  include=FALSE}
 checkm <- read.delim(params$checkm, check.names = FALSE)
 log <- read.delim(params$log)
-ani <- read.delim(params$ani, check.names = FALSE)
+ani <- read.delim(params$ani, check.names = FALSE, col.names = c("Sample", "Reference", "PID", "Orthologous Matches", "Total Sequences"))
 passed <- as.data.frame(read.delim(params$passed,col.names = "Sample", header=FALSE))
 ref <- params$ref
 ```
