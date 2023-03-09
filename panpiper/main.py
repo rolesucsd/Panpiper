@@ -96,8 +96,6 @@ def cli():
     # Parameters
     # Defaults set for Bacteroides fragilis
     app = ap.add_argument_group('parameters')
-    app.add_argument('--ref', help='Name of reference',
-                     default="9343", type=str)
     app.add_argument(
         '--ani_cutoff', help='Average percent identity to reference cutoff', default=95, type=float)
     app.add_argument('--contig_number',
@@ -133,8 +131,8 @@ def cli():
         # Quality control
         logging.info(
             'Run quality control for assembly quality and taxonomy verification')
-        logging.info('The parameters used in this study are- GC:' + str(master.gc) + ', Genome Size:' + str(master.genome_size) + ', Reference:' + master.ref +
-                     ', ANI Cutoff:' + str(master.ani_cutoff) + ', Contig Number:' + str(master.contig_number) + ', N50:' + str(master.n50))
+        logging.info('The parameters used in this study are- , Reference: ' + master.reference +
+                     ', ANI Cutoff: ' + str(master.ani_cutoff) + ', Contig Number: ' + str(master.contig_number) + ', N50: ' + str(master.n50))
         wf.run(snakefile=WORKFLOW_QUALITY)
 
     # If workflow is set to Pangenome
@@ -148,7 +146,7 @@ def cli():
     elif (master.workflow == "pyseer"):
         logging.info('Run genome-wide association study')
         logging.info(
-            'The parameters used in this study are- Phenotype column:' + str(master.pheno_column))
+            'The parameters used in this study are- Phenotype column: ' + str(master.pheno_column))
         wf.run(snakefile=WORKFLOW_PYSEER)
 
 

@@ -2,7 +2,7 @@
     "__default__":
     {
     "account": "knightlab",
-        "mem": "5G",
+        "mem": "100G",
         "time": "2:00:00",
         "cpus": 20,
         "ntasks-per-node": 20,

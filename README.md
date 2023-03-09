@@ -62,6 +62,11 @@ Output:
 ### Quality control: 
 The fasta file directory should contain a subdirectory for each sample where the subdirectory name is the sample of the sample. The fasta file within these directories should be formatted as contigs.fa. This is the standard output from Shovill. The sample list should have one sample name per line which corresponds to the directory names. The reference fasta file should be the representative strain of the species which the samples will be compared to using average nucleotide identity.
 
+Additional parameters that may be included:
+* --ani_cutoff : percent identity to reference cutoff (default 95)
+* --n50 : N50 cutoff (default 5000)
+* --contig_number : number of contigs cutoff (default 1000)
+
 ```sh
 panpiper -w quality -o {ouput directory} -a {fasta directory} -s  {sample list} -r {reference fasta file}
 ```

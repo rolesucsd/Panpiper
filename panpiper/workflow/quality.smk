@@ -20,8 +20,6 @@ with open(PARAMS, 'r') as fh:
     fl = [x.strip().split() for x in fh.readlines()]
 param_dict = {x[0]: x[1] for x in fl}
 
-GC = param_dict["gc"]
-GENOME_SIZE = param_dict["genome_size"]
 PARAMS_REF = param_dict["ref"]
 ANI_CUTOFF = param_dict["ani_cutoff"]
 CONTIG_NUMBER = param_dict["contig_number"]
@@ -74,7 +72,6 @@ rule run_checkm:
     output:
         stats=os.path.join(OUT,"Quality/Assembly_filter/{file}/storage/bin_stats.analyze.tsv"),
     shell:
-#        echo ".snakemake/conda/checkm" | checkm data setRoot "../.snakemake/conda/checkm"
         """
         checkm lineage_wf -t 20 -x fna {params.binset} {params.binset} &> {log}
         """
@@ -136,8 +133,6 @@ rule filter_files:
         checkm=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
         outpath=os.path.join(OUT,"Quality"),
         ref=PARAMS_REF,
-        gc=GC,
-        genome_size=GENOME_SIZE,
         ac=ANI_CUTOFF,
         cn=CONTIG_NUMBER,
         n=N50,
@@ -150,7 +145,7 @@ rule filter_files:
         os.path.join(OUT,"Quality/FastANI/ani_reformat.csv"),
     shell:
         """
-        python panpiper/workflow/scripts/filter_isolates.py -o {params.outpath} -a {input.ani} -l {params.checkm} -s {input.stat} -r {params.ref} -gc {params.gc} -g {params.genome_size} -ac {params.ac} -cn {params.cn} -n {params.n} &> {log}
+        python panpiper/workflow/scripts/filter_isolates.py -o {params.outpath} -a {input.ani} -l {params.checkm} -s {input.stat} -r {params.ref} -ac {params.ac} -cn {params.cn} -n {params.n} &> {log}
         """
 
 rule print_results:

@@ -174,4 +174,8 @@ class Test(object):
         fh = open(self.params, 'w')
         for k, v in pars.items():
             fh.write('{}\t{}\n'.format(k, v))
+        if not self.reference == "skip":
+            ref = os.path.basename(self.reference)
+            ref = os.path.splitext(ref)[0]
+            fh.write('ref\t{}\n'.format(ref))
         fh.close()
