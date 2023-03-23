@@ -42,6 +42,7 @@ class Workflow(object):
                '--use-conda',
                '--latency-wait', '20',
                '--rerun-incomplete',
+               '--jobs',str(self.max_jobs),
                '-s', snakefile,
                '--config',
                'out='+self.output,
@@ -57,30 +58,14 @@ class Workflow(object):
                'params='+self.params]
 
         # If run on server
-        if self.cluster_config == None:
-            cmd += ['--cores', str(self.max_cores)]
+        if self.cluster == None:
+            cmd += ['--cores', str(self.max_cores),
+                    '--mem', str(self.max_mem)]
 
         # If run on a cluster
         else:
-
-            # Make logging dirs
-            if self.cluster_type in ('qsub', 'slurm'):
-                try:
-                    os.mkdir(self.output + 'report')
-                except FileExistsError:
-                    pass
-
             # Add cluster info to snakemake command
-            cmd += ['--jobs', str(self.max_jobs),
-                    '--local-cores', str(self.max_cores)]
-
-        if self.cluster_type == 'qsub' or self.cluster_type == 'slurm':
-
-            cluster_cmd = ['--cluster-config', self.cluster_config]
-            cluster_args_mod = '"' + self.cluster_args + '"'
-            cluster_cmd += [' --cluster ', cluster_args_mod]
-            # Final snakemake command
-            cmd += cluster_cmd
+            cmd += ['--profile', self.profile]
 
         # Only install conda envs if only_conda
         if self.only_conda:
@@ -95,6 +80,12 @@ class Workflow(object):
         if self.unlock:
             logging.info('Unlocking working directory.')
             cmd.append('--unlock')
+
+        # make log directory
+        try:
+            os.mkdir(self.output + 'report')
+        except FileExistsError:
+            pass
 
         logging.info(' '.join(cmd))
         args = shlex.split(' '.join(cmd))

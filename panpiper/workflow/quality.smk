@@ -41,13 +41,16 @@ rule all:
 # 30 sec per file
 rule contig_filter:
     input:
-        assembly=os.path.join(FASTA,"{file}/contigs.fa"),
+        assembly=os.path.join(FASTA,"{file}.fa"),
     params:
         contig=500,
     conda:
         "envs/bbmap.yml"
     log:
         os.path.join(OUT,"report/prokka_filter_{file}.log"),
+    resources:
+        mem="1G"
+    threads: 1
     benchmark:
         os.path.join(OUT,"benchmark/prokka_filter_{file}.benchmark"),    
     output:
@@ -61,7 +64,6 @@ rule run_checkm:
     input:
         file=os.path.join(OUT,"Quality/Assembly_filter/{file}/{file}.fna"),
     params:
-        threads=40,
         binset=os.path.join(OUT,"Quality/Assembly_filter/{file}"),
     conda:
         "envs/checkm.yml"
@@ -69,6 +71,9 @@ rule run_checkm:
         log=os.path.join(OUT,"Quality/Assembly_filter/{file}/lineage.log"),
     benchmark:
         os.path.join(OUT,"benchmark/checkm_{file}.benchmark"),    
+    resources:
+        mem="50G"
+    threads: 20
     output:
         stats=os.path.join(OUT,"Quality/Assembly_filter/{file}/storage/bin_stats.analyze.tsv"),
     shell:
@@ -87,7 +92,10 @@ rule checkm_to_graph:
     log:
         os.path.join(OUT,"report/checkm_graph.log"),
     benchmark:
-        os.path.join(OUT,"benchmark/checkm_graph.benchmark"),    
+        os.path.join(OUT,"benchmark/checkm_graph.benchmark"),
+    resources:
+        mem="1G"
+    threads: 1        
     output:
         png=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
         stats=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
@@ -106,6 +114,9 @@ rule fastani:
         "envs/fastani.yml"
     log:
         os.path.join(OUT,"report/fastani_{file}.log"),
+    resources:
+        mem="1G"
+    threads: 1
     benchmark:
         os.path.join(OUT,"benchmark/fastani_{file}.benchmark"),    
     output:
@@ -117,6 +128,9 @@ rule fastani:
 rule fastani_concat:
     input:
         expand(os.path.join(OUT,"Quality/FastANI/{file}.txt"), file=READS),
+    resources:
+        mem="1G"
+    threads: 1
     output:
         txt=os.path.join(OUT,"Quality/FastANI/fastani_summary.txt"),
     shell:
@@ -140,9 +154,11 @@ rule filter_files:
         os.path.join(OUT,"report/filter_files.log"),
     benchmark:
         os.path.join(OUT,"benchmark/filter_files.benchmark"),    
+    resources:
+        mem="1G"
+    threads: 1
     output:
         os.path.join(OUT,"Quality/sample_list.txt"),
-        os.path.join(OUT,"Quality/FastANI/ani_reformat.csv"),
     shell:
         """
         python panpiper/workflow/scripts/filter_isolates.py -o {params.outpath} -a {input.ani} -l {params.checkm} -s {input.stat} -r {params.ref} -ac {params.ac} -cn {params.cn} -n {params.n} &> {log}
@@ -150,7 +166,7 @@ rule filter_files:
 
 rule print_results:
     input:
-        ani=os.path.join(OUT,"Quality/FastANI/ani_reformat.csv"),
+        ani=os.path.join(OUT,"Quality/FastANI/fastani_summary.txt"),
         stat=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
         log=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
         passed=os.path.join(OUT,"Quality/sample_list.txt"),
@@ -163,6 +179,9 @@ rule print_results:
         os.path.join(OUT,"report/print_results.log"),
     benchmark:
         os.path.join(OUT,"benchmark/print_results.benchmark"),    
+    resources:
+        mem="1G"
+    threads: 1
     output:
         SAMPLES_OUT,
     shell:

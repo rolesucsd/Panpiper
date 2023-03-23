@@ -38,16 +38,15 @@ class Test(object):
 
         # Check cluster info input
         # TODO: update to check cluster information
-        if self.cluster_type is not None:
-            if self.cluster_args is not None:
-                if len(re.findall('{cluster.mem}|{cluster.time}|{cluster.cpus}', self.cluster_args)) != 3:
-                    logging.error(
-                        'cluster_args has to contain the following special strings: {cluster.cpus}, {cluster.mem}, and {cluster.time}')
-                    sys.exit()
-            else:
-                logging.error(
-                    'cluster_args is required when running on a compute cluster')
+        if self.cluster is not None:
+            if self.profile is None:
+                logging.error('A profile folder must be specified')
                 sys.exit()
+            else: 
+                profile = os.path.join(self.profile, "config.yaml")
+                if not os.path.isfile(profile):
+                    logging.error('config.yaml file not found in profile folder')
+                    sys.exit()
 
         # Check input, params, and output
         self.check_out()

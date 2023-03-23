@@ -64,24 +64,14 @@ def cli():
     # Cluster arguments
     apc = ap.add_argument_group('compute cluster arguments')
     apc.add_argument(
-        '--cluster_type', help='Cluster compute structure [%(default)s]', default=None, type=str, choices=[None, 'qsub', 'slurm'])
-    apc.add_argument('--cluster_config',
-                     help='Cluster json file [%(default)s]', default=None, type=str)
-    apc.add_argument(
-        '--cluster_args', help='Cluster scheduler arguments when submitting cluster jobs.\nFollow the format: "sbatch -A {cluster.account} --mem {cluster.mem} -t {cluster.time} --cpus-per-task {cluster.cpus}"', default=None, type=str)
-    apc.add_argument(
-        '--max_jobs', help='Maximum number of cluster jobs [%(default)s]', default=40, type=int)
+        '--cluster', help='Run with cluster', action='store_true')
+    apc.add_argument('--profile',
+                     help='Profile folder contain contig file [%(default)s]', default=None, type=str)
 
     # Optional
     apo = ap.add_argument_group('optional arguments')
     apo.add_argument("-h", "--help", action="help",
                      help="show this help message and exit")
-    apo.add_argument(
-        "-j", "--jobs", help="Number of jobs to run at a time", default="50", type=str)
-    apo.add_argument(
-        '--max_cores', help='Maximum number of cores [%(default)s]', default=20, type=int)
-    apo.add_argument(
-        '--max_mem', help='Maximum memory in GB [%(default)s]', default=250, type=int)
     apo.add_argument('--log_lvl', help='Logging level [%(default)s].',
                      default='INFO', type=str, choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'])
     apo.add_argument(
@@ -109,6 +99,13 @@ def cli():
                      default="panpiper/databases/bakta", type=str)
     app.add_argument(
         '--pheno_column', help='The column in the phenotype file to use for the association study', type=str)
+    app.add_argument(
+        '--max_jobs', help='Maximum number of cluster jobs [%(default)s]', default=40, type=int)
+    app.add_argument(
+        '--max_cores', help='Maximum number of cores [%(default)s]', default=20, type=int)
+    app.add_argument(
+        '--max_mem', help='Maximum memory in GB [%(default)s]', default=250, type=int)
+
 
     ########## Workflow ##########
     master = Test(ap)

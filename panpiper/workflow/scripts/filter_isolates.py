@@ -91,13 +91,9 @@ def checkm_stats_filter(sample_list, file, contig_number, N50):
     df = pd.read_csv(file, sep='\t', header=0)
     # For each row in the dataframe, only include a sample in a list
     # If it is above a certain value in each of the categories
-    # Genome size within 50% of ref, Contig num below input, N50 above 1e5, GC within 30% of ref
-    mini = genome_size-genome_size*.5
-    maxi = genome_size+genome_size*.5
-    print(mini, maxi)
+    # Contig num below input, N50 above 1e5
     # Subset the dataframe for the failed samples
-    sample_fail = df[(df["contigs"] > contig_number) | (df["N50 contigs"] < N50) | (df["Genome size"] < int(mini)) |
-                     (df["Genome size"] > int(maxi)) | (df["GC"] > (GC+GC*.1)/100) | (df["GC"] < (GC-GC*.1)/100)]
+    sample_fail = df[(df["contigs"] > contig_number) | (df["N50 contigs"] < N50) ]
 
     df = df[df["contigs"] <= contig_number]
     df = df[df["N50 contigs"] >= N50]

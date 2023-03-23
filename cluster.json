@@ -3,9 +3,9 @@
     {
     "account": "knightlab",
         "mem": "100G",
-        "time": "2:00:00",
+        "time": "5:00:00",
         "cpus": 20,
-        "ntasks-per-node": 20,
+        "ntasks-per-node": 10,
         "nodes": 1,
         "mail-type": "END,FAIL",
         "mail-user": "roles@ucsd.edu"

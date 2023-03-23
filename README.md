@@ -138,10 +138,10 @@ Output:
         * phylogeny_similarity.tsv - a matrix of similarity to use as a covariate to correct for population structure in the model
 
 ### Run on a compute cluster
-To run on a compute cluster, the cluster type needs to be specified (ie "slurm" below). In addition a "cluster.json" file must be provided which specifies details such as cluster.account, cluster.mem, etc. The example below is a qsub example. 
+To run on a compute cluster, a profile folder must be specified which should contain a config.yaml file. Details on what to include in the config file can be found [here](https://snakemake.readthedocs.io/en/stable/executing/cli.html#profiles).
 
 ```sh
-panpiper ... --cluster_type slurm --cluster_config cluster.json --cluster_args "sbatch -A {cluster.account} --mem {cluster.mem} -t {cluster.time} --cpus-per-task {cluster.cpus}"
+panpiper ... --profile {profile folder}
 ```
 
 
