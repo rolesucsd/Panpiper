@@ -38,7 +38,7 @@ class Test(object):
 
         # Check cluster info input
         # TODO: update to check cluster information
-        if self.cluster is not None:
+        if self.cluster:
             if self.profile is None:
                 logging.error('A profile folder must be specified')
                 sys.exit()

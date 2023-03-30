@@ -141,7 +141,7 @@ Output:
 To run on a compute cluster, a profile folder must be specified which should contain a config.yaml file. Details on what to include in the config file can be found [here](https://snakemake.readthedocs.io/en/stable/executing/cli.html#profiles).
 
 ```sh
-panpiper ... --profile {profile folder}
+panpiper ... --cluster --profile {profile folder}
 ```
 
 

@@ -37,7 +37,7 @@ rule all:
         os.path.join(OUT,"Pangenome/Summary/db_clusters.csv"),
         os.path.join(OUT,"Pangenome/Summary/core_gene_alignment.aln.iqtree"),
         os.path.join(OUT,"Pangenome/Summary/Summary.emapper.annotations"),
-        os.path.join(OUT,"Pangenome/Summary/kraken_ag.txt"),
+#        os.path.join(OUT,"Pangenome/Summary/kraken_ag.txt"),
         os.path.join(OUT,"Pangenome/Unitig/unitig.pyseer"),
 
 # Download databases
@@ -211,8 +211,6 @@ rule fasttree:
         os.path.join(OUT,"report/fasttree.log"),
     benchmark:
         os.path.join(OUT,"benchmark/fasttree.benchmark"),
-    resources:
-        mem_mb=500000,
     output:
         os.path.join(OUT,"Pangenome/Phylogeny/fasttree.nwk"),
     shell:
@@ -288,6 +286,9 @@ rule concat_amr:
         expand(os.path.join(OUT,"Pangenome/AMR/{file}.txt"), file=filtered),
     log:
         os.path.join(OUT,"report/concat_amr.log"),
+    resources:
+        mem="1G"
+    threads: 1
     benchmark:
         os.path.join(OUT,"benchmark/concat_amr.benchmark"),
     output:
@@ -308,6 +309,9 @@ rule graph_amr:
         os.path.join(OUT,"report/graph_amr.log"),
     benchmark:
         os.path.join(OUT,"benchmark/graph_amr.benchmark"),
+    resources:
+        mem="1G"
+    threads: 1
     output:
         os.path.join(OUT,"Pangenome/Summary/amr.png"),
     shell:
@@ -326,6 +330,8 @@ rule poppunk_sketch:
         os.path.join(OUT,"report/poppunk_sketch.log"),
     benchmark:
         os.path.join(OUT,"benchmark/poppunk_sketch.benchmark"),
+    resources:
+        mem="5G"
     output:
         os.path.join(OUT,"Pangenome/Phylogroups/db/db.dists.pkl"),
     shell:
@@ -344,6 +350,8 @@ rule poppunk_qc:
         os.path.join(OUT,"report/poppunk_qc.log"),
     benchmark:
         os.path.join(OUT,"benchmark/poppunk_qc.benchmark"),
+    resources:
+        mem="5G"
     output:
         os.path.join(OUT,"Pangenome/Phylogroups/db/poppunk.txt"),
     shell:

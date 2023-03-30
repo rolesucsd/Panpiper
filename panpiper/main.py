@@ -63,19 +63,15 @@ def cli():
 
     # Cluster arguments
     apc = ap.add_argument_group('compute cluster arguments')
-    apc.add_argument(
-        '--cluster', help='Run with cluster', action='store_true')
-    apc.add_argument('--profile',
-                     help='Profile folder contain contig file [%(default)s]', default=None, type=str)
+    apc.add_argument('--cluster', help='Run with cluster', action='store_true')
+    apc.add_argument('--profile',help='Profile folder contain contig file [%(default)s]', default=None, type=str)
 
     # Optional
     apo = ap.add_argument_group('optional arguments')
-    apo.add_argument("-h", "--help", action="help",
-                     help="show this help message and exit")
+    apo.add_argument("-h", "--help", action="help",help="show this help message and exit")
     apo.add_argument('--log_lvl', help='Logging level [%(default)s].',
                      default='INFO', type=str, choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'])
-    apo.add_argument(
-        '--only_conda', help='Only install conda environments, then exit', action='store_true')
+    apo.add_argument('--only_conda', help='Only install conda environments, then exit', action='store_true')
     apo.add_argument(
         '--snake', help='Only run specific snakemake command. For debug purposes', type=str)
     apo.add_argument(
@@ -101,11 +97,6 @@ def cli():
         '--pheno_column', help='The column in the phenotype file to use for the association study', type=str)
     app.add_argument(
         '--max_jobs', help='Maximum number of cluster jobs [%(default)s]', default=40, type=int)
-    app.add_argument(
-        '--max_cores', help='Maximum number of cores [%(default)s]', default=20, type=int)
-    app.add_argument(
-        '--max_mem', help='Maximum memory in GB [%(default)s]', default=250, type=int)
-
 
     ########## Workflow ##########
     master = Test(ap)

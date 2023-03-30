@@ -41,7 +41,7 @@ rule all:
 # 30 sec per file
 rule contig_filter:
     input:
-        assembly=os.path.join(FASTA,"{file}.fa"),
+        assembly=os.path.join(FASTA,"{file}/contigs.fa"),
     params:
         contig=500,
     conda:
@@ -70,10 +70,7 @@ rule run_checkm:
     log:
         log=os.path.join(OUT,"Quality/Assembly_filter/{file}/lineage.log"),
     benchmark:
-        os.path.join(OUT,"benchmark/checkm_{file}.benchmark"),    
-    resources:
-        mem="50G"
-    threads: 20
+        os.path.join(OUT,"benchmark/checkm_{file}.benchmark"),
     output:
         stats=os.path.join(OUT,"Quality/Assembly_filter/{file}/storage/bin_stats.analyze.tsv"),
     shell:
@@ -180,7 +177,7 @@ rule print_results:
     benchmark:
         os.path.join(OUT,"benchmark/print_results.benchmark"),    
     resources:
-        mem="1G"
+        mem="5G"
     threads: 1
     output:
         SAMPLES_OUT,

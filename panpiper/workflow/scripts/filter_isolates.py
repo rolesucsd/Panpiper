@@ -164,7 +164,7 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--completeness", default=95, type=float)
     parser.add_argument("-c", "--contamination", default=5, type=float)
     parser.add_argument("-sh", "--strain_heterogeneity", default=0, type=float)
-    parser.add_argument("-ac", "--ani_cuttoff", default=85, type=float)
+    parser.add_argument("-ac", "--ani_cuttoff", default=95, type=float)
     parser.add_argument("-r", "--reference")
     parser.add_argument("-cn", "--contig_number", default=1000, type=float)
     parser.add_argument("-n", "--N50", default=5000, type=float)

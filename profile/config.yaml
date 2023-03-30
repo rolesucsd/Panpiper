@@ -6,10 +6,11 @@ cluster:
     --job-name=smk-{rule}-{wildcards}
     --account=knightlab
 default-resources:
-  - time=120
+  - time=600
   - threads=20
-  - cpus=2
-restart-times: 3
+  - cpus=1
+  - mem_mb=150000
+restart-times: 0
 max-jobs-per-second: 10
 max-status-checks-per-second: 1
 latency-wait: 60

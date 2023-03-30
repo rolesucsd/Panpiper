@@ -57,14 +57,8 @@ class Workflow(object):
                'pheno='+self.pheno,
                'params='+self.params]
 
-        # If run on server
-        if self.cluster == None:
-            cmd += ['--cores', str(self.max_cores),
-                    '--mem', str(self.max_mem)]
-
-        # If run on a cluster
-        else:
-            # Add cluster info to snakemake command
+        # If run on cluster
+        if self.cluster:
             cmd += ['--profile', self.profile]
 
         # Only install conda envs if only_conda
@@ -87,6 +81,7 @@ class Workflow(object):
         except FileExistsError:
             pass
 
+        print(cmd)
         logging.info(' '.join(cmd))
         args = shlex.split(' '.join(cmd))
 
