@@ -11,6 +11,5 @@ else
 fi
 
 for i in $SAMPLES; do 
-    echo "hi"
     echo "$i"  >> $OUT_FILE
  done

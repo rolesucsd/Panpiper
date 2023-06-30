@@ -7,6 +7,8 @@ import os
 import subprocess
 import math
 import distutils.util
+from scripts.wrangle_output import genes_long, gene_matrix_phylogroup, gene_matrix, process_data
+from scripts.phylogroup_cluster import cluster_samples
 
 
 OUT = config['out']
@@ -21,7 +23,6 @@ param_dict = {x[0]: x[1] for x in fl}
 BAKTA = param_dict["bakta_dir"]
 REF = param_dict["ref"]
 EGGNOG = param_dict['eggnog_dir']
-KRAKEN = param_dict["kraken_dir"]
 
 def read_filtered_files():
     with open(SAMPLE_LIST) as f:
@@ -34,11 +35,11 @@ rule all:
     input:
         os.path.join(OUT,"Pangenome/Summary/amr.png"),
         os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.bwt"),
-        os.path.join(OUT,"Pangenome/Summary/db_clusters.csv"),
         os.path.join(OUT,"Pangenome/Summary/core_gene_alignment.aln.iqtree"),
-        os.path.join(OUT,"Pangenome/Summary/Summary.emapper.annotations"),
-#        os.path.join(OUT,"Pangenome/Summary/kraken_ag.txt"),
         os.path.join(OUT,"Pangenome/Unitig/unitig.pyseer"),
+        os.path.join(OUT,"Pangenome/Summary/genes_phylogroup_matrix_perc.txt"),
+        os.path.join(OUT,"Pangenome/Summary/genes_anno.txt"),
+        os.path.join(OUT,"Pangenome/Summary/genes_matrix.txt"),
 
 # Download databases
 rule bakta:
@@ -68,20 +69,6 @@ rule eggnog_db:
         os.path.join(EGGNOG, "eggnog.db"),
     shell:
         "download_eggnog_data.py --data_dir {input}"
-
-rule kraken_db:
-    input:
-        KRAKEN,
-    conda:
-        "envs/kraken.yml",
-    log:
-        os.path.join(OUT,"report/kraken_db.log"),
-    benchmark:
-        os.path.join(OUT,"benchmark/kraken_db.benchmark"),
-    output:
-        os.path.join(KRAKEN, "taxo.k2d"),
-    shell:
-        "kraken2-build --standard -db {input}"
 
 # Set up files for downstream analysis
 rule setup:
@@ -146,6 +133,7 @@ rule panaroo:
     output:
         os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
         os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
+        os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence_roary.csv"),
     shell:
         "panaroo -i {input} -o {params} --remove-invalid-genes --clean-mode strict -a core --core_threshold 0.98 --len_dif_percent 0.98 -f 0.7 --merge_paralogs -t 20 &> {log}"
 
@@ -202,6 +190,8 @@ rule bwa_index_pan:
         """
 
 # Create a starting tree based off core genome alignment
+# gtr nt = a tree for a nucleotide alignment with GTR+CAT model 
+# gamma = 5% slower but rescales teh branch lengthsa nd computes a Gamma20-based likelihood which is more comparable across runs 
 rule fasttree:
     input:
         os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
@@ -218,6 +208,7 @@ rule fasttree:
 
 
 # Build more accurate tree using fasttree as a starting point
+# This step infers topology 
 rule raxml:
     input:
         tre=os.path.join(OUT,"Pangenome/Phylogeny/fasttree.nwk"),
@@ -239,6 +230,7 @@ rule raxml:
 # Continue to build tree from RAXML with iqtree
 # all means combined tree search and bootstrapping analysis
 # GTR indicates the sequence is DNA data
+# This step optimizes branch lengths and computes likelihood score 
 rule iqtree:
     input:
         aln=os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
@@ -317,68 +309,6 @@ rule graph_amr:
     shell:
         "Rscript panpiper/workflow/scripts/AMR_heatmap.R {input} {params} &> {log}"
 
-
-# Work on phylogroup division using Poppunk
-rule poppunk_sketch:
-    input:
-        os.path.join(OUT,"Pangenome/Phylogroups/poppunk.list"),
-    params:
-        os.path.join(OUT,"Pangenome/Phylogroups/db"),
-    conda:
-        "envs/poppunk.yml"
-    log:
-        os.path.join(OUT,"report/poppunk_sketch.log"),
-    benchmark:
-        os.path.join(OUT,"benchmark/poppunk_sketch.benchmark"),
-    resources:
-        mem="5G"
-    output:
-        os.path.join(OUT,"Pangenome/Phylogroups/db/db.dists.pkl"),
-    shell:
-        "poppunk --create-db --output {params} --r-files {input} --threads 20 &> {log}"
-
-
-rule poppunk_qc:
-    input:
-        os.path.join(OUT,"Pangenome/Phylogroups/db/db.dists.pkl"),
-    params:
-        db=os.path.join(OUT,"Pangenome/Phylogroups/db"),
-        ref=REF,
-    conda:
-        "envs/poppunk.yml"
-    log:
-        os.path.join(OUT,"report/poppunk_qc.log"),
-    benchmark:
-        os.path.join(OUT,"benchmark/poppunk_qc.benchmark"),
-    resources:
-        mem="5G"
-    output:
-        os.path.join(OUT,"Pangenome/Phylogroups/db/poppunk.txt"),
-    shell:
-        "poppunk --qc-db --ref-db {params.db} --type-isolate {params.ref} &> {log}"
-
-
-rule poppunk_fit:
-    input:
-        os.path.join(OUT,"Pangenome/Phylogroups/db/db.dists.pkl"),
-    params:
-        db=os.path.join(OUT,"Pangenome/Phylogroups/db"),
-        out=os.path.join(OUT,"Pangenome/Phylogroups/db/db_clusters.csv"),
-        model="lineage",
-    conda:
-        "envs/poppunk.yml"
-    log:
-        os.path.join(OUT,"report/poppunk_fit.log"),
-    benchmark:
-        os.path.join(OUT,"benchmark/poppunk_fit.benchmark"),
-    output:
-        os.path.join(OUT,"Pangenome/Summary/db_clusters.csv"),
-    shell:
-        """
-        poppunk --fit-model {params.model} --ref-db {params.db} --K 4 &> {log}
-        cp {params.out} {output}
-        """
-
 rule eggnog_mapper:
     input:
         protein=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.faa"),
@@ -400,50 +330,6 @@ rule eggnog_mapper:
         emapper.py -i {input.protein} --data_dir {params.db} -o {params.outdir} --override &> {log}
         """
 
-rule kraken:
-    input:
-        file=os.path.join(FASTA, "{file}/{file}.fna"),
-        db=os.path.join(KRAKEN, "taxo.k2d"),
-    params:
-        db=KRAKEN,
-    conda:
-        "envs/kraken.yml"
-    log:
-        os.path.join(OUT,"report/kraken_{file}.log"),
-    benchmark:
-        os.path.join(OUT,"benchmark/kraken_{file}.benchmark"),
-    output:
-        out=os.path.join(OUT,"Pangenome/Kraken/{file}.out"),
-        report=os.path.join(OUT,"Pangenome/Kraken/{file}.report")
-    shell:
-        """
-        kraken2 --db {params.db} --output {output.out} --threads 20 --use-names --report {output.report} --use-mpa-style {input.file} &> {log}
-        """
-
-rule kraken_reformat:
-    input:
-        out=os.path.join(OUT,"Pangenome/Kraken/{file}.out"),
-    params:
-        sample="{file}",
-        outpath=os.path.join(OUT,"Pangenome/Kraken"),
-    log:
-        os.path.join(OUT,"report/kraken_reformat_{file}.log"),
-    benchmark:
-        os.path.join(OUT,"benchmark/kraken_reformat_{file}.benchmark"),
-    output:
-        report=os.path.join(OUT,"Pangenome/Kraken/{file}_reformat.txt"),
-    shell:
-        "python panpiper/workflow/scripts/kraken_reformat.py {params.sample} {params.outpath} &> {log}"
-
-rule kraken_ag:
-    input:
-        report=expand(os.path.join(OUT,"Pangenome/Kraken/{file}_reformat.txt"), file=filtered),
-    output:
-        os.path.join(OUT,"Pangenome/Summary/kraken_ag.txt"),
-    shell:
-        "awk FNR!=1 {input} > {output}"
-
-
 # Unitig caller will create unitigs which is a kmer alternative (read about why using it in gwas is better or worse)
 # In future note that you can use fastq or fasta or both see commented out line of code for other use
 # Time: 25 minutes for 571 files 
@@ -462,4 +348,76 @@ rule unitig:
         os.path.join(OUT,"Pangenome/Unitig/unitig.pyseer"),
     shell:
         "unitig-caller --call --reads {input} --out {params} &> {log}" 
+
+rule mash_fasta:
+    input:
+        expand(os.path.join(FASTA, "{file}/{file}.fna"), file=filtered),
+    params:
+        os.path.join(OUT,"Pangenome/Mash/fasta"),
+    conda:
+        "envs/mash.yml"
+    output:
+        os.path.join(OUT,"Pangenome/Mash/fasta.tsv"),
+    shell:
+        """
+        mash sketch -s 10000 -o {params} {input}
+        mash dist {params}.msh {params}.msh -t > {output}
+        """
+
+# Add rule to interpret mash output
+rule phylogroups:
+    input:
+        os.path.join(OUT,"Pangenome/Mash/fasta.tsv"),
+    params:
+        os.path.join(OUT,"Pangenome/Mash/"),
+    output:
+        os.path.join(OUT,"Pangenome/Mash/phylogroups.txt"),
+    run:
+        cluster_samples(mash_file=os.path.join(OUT,"Pangenome/Mash/fasta.tsv"), output_folder=os.path.join(OUT,"Pangenome/Mash/"))
+
+
+# Add rule to wrangle panaroo output 
+rule process_data:
+    input:
+        eggnog=os.path.join(OUT,"Pangenome/Summary/Summary.emapper.annotations"),
+        bakta=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.tsv"),
+    params:
+        output=os.path.join(OUT,"Pangenome/Summary/"),
+        genes=os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence_roary.csv"),
+    output:
+        os.path.join(OUT,"Pangenome/Summary/genes_anno.txt"),
+    run:
+        process_data(bakta=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.tsv"), genes=os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence_roary.csv"), eggnog=os.path.join(OUT,"Pangenome/Summary/Summary.emapper.annotations"), output=os.path.join(OUT,"Pangenome/Summary/"))
+
+rule genes_long:
+    input:
+        clusters=os.path.join(OUT,"Pangenome/Mash/phylogroups.txt"),
+    params:
+        genes=os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence_roary.csv"),
+        output=os.path.join(OUT,"Pangenome/Summary/"),
+    output:
+        os.path.join(OUT,"Pangenome/Summary/genes_long.txt"),
+    run:
+        genes_long(clusters=os.path.join(OUT,"Pangenome/Mash/phylogroups.txt"), genes=os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence_roary.csv"), output=os.path.join(OUT,"Pangenome/Summary/"))
+
+
+rule gene_matrix_phylogroup:
+    input:
+        genes_long=os.path.join(OUT,"Pangenome/Summary/genes_long.txt"),
+    params:
+        output=os.path.join(OUT,"Pangenome/Summary/"),
+    output:
+        os.path.join(OUT,"Pangenome/Summary/genes_phylogroup_matrix_perc.txt"),
+    run:
+        gene_matrix_phylogroup(genes_long=os.path.join(OUT,"Pangenome/Summary/genes_long.txt"), output=os.path.join(OUT,"Pangenome/Summary/"))
+
+rule gene_matrix:
+    input:
+        genes=os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence_roary.csv"),
+    params:
+        output=os.path.join(OUT,"Pangenome/Summary/"),
+    output:
+        os.path.join(OUT,"Pangenome/Summary/genes_matrix.txt"),
+    run:
+        gene_matrix(genes=os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence_roary.csv"), output=os.path.join(OUT,"Pangenome/Summary/"))
 

@@ -42,6 +42,7 @@ class Workflow(object):
                '--use-conda',
                '--latency-wait', '20',
                '--rerun-incomplete',
+               '--keep-going',
                '--jobs',str(self.max_jobs),
                '-s', snakefile,
                '--config',

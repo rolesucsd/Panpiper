@@ -88,11 +88,11 @@ def cli():
                      help='Max number of contigs', default=1000, type=int)
     app.add_argument('--n50', help='N50 cutoff', default=5000, type=int)
     app.add_argument('--eggnog_dir', help='Path to the eggnog database directory',
-                     default="panpiper/databases/eggnog", type=str)
+                     default="/panfs/roles/Panpiper/panpiper/databases/eggnog", type=str)
     app.add_argument('--kraken_dir', help='Path to the kraken2 database directory',
-                     default="panpiper/databases/kraken", type=str)
+                     default="/panfs/roles/Panpiper/panpiper/databases/kraken", type=str)
     app.add_argument('--bakta_dir', help='Path to the bakta database directory',
-                     default="panpiper/databases/bakta", type=str)
+                     default="/panfs/roles/Panpiper/panpiper/databases/bakta", type=str)
     app.add_argument(
         '--pheno_column', help='The column in the phenotype file to use for the association study', type=str)
     app.add_argument(

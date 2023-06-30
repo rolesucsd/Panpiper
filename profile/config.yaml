@@ -6,7 +6,7 @@ cluster:
     --job-name=smk-{rule}-{wildcards}
     --account=knightlab
 default-resources:
-  - time=600
+  - time=30
   - threads=20
   - cpus=1
   - mem_mb=150000

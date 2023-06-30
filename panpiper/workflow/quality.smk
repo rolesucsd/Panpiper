@@ -41,7 +41,7 @@ rule all:
 # 30 sec per file
 rule contig_filter:
     input:
-        assembly=os.path.join(FASTA,"{file}/contigs.fa"),
+        assembly=os.path.join(OUT,"Assembly/{file}/contigs.fa"),
     params:
         contig=500,
     conda:
@@ -54,7 +54,7 @@ rule contig_filter:
     benchmark:
         os.path.join(OUT,"benchmark/prokka_filter_{file}.benchmark"),    
     output:
-        fna=os.path.join(OUT,"Quality/Assembly_filter/{file}/{file}.fna"),
+        fna=os.path.join(OUT,"Assembly/{file}/{file}.fna"),
     shell:
         "reformat.sh in={input.assembly} out={output} minlength={params.contig} &> {log}"
 
@@ -62,17 +62,17 @@ rule contig_filter:
 # 5 minutes per sample
 rule run_checkm:
     input:
-        file=os.path.join(OUT,"Quality/Assembly_filter/{file}/{file}.fna"),
+        file=os.path.join(OUT,"Assembly/{file}/{file}.fna"),
     params:
-        binset=os.path.join(OUT,"Quality/Assembly_filter/{file}"),
+        binset=os.path.join(OUT,"Assembly/{file}"),
     conda:
         "envs/checkm.yml"
     log:
-        log=os.path.join(OUT,"Quality/Assembly_filter/{file}/lineage.log"),
+        log=os.path.join(OUT,"Assembly/{file}/lineage.log"),
     benchmark:
         os.path.join(OUT,"benchmark/checkm_{file}.benchmark"),
     output:
-        stats=os.path.join(OUT,"Quality/Assembly_filter/{file}/storage/bin_stats.analyze.tsv"),
+        stats=os.path.join(OUT,"Assembly/{file}/storage/bin_stats.analyze.tsv"),
     shell:
         """
         checkm lineage_wf -t 20 -x fna {params.binset} {params.binset} &> {log}
@@ -81,13 +81,32 @@ rule run_checkm:
 
 rule checkm_to_graph:
     input:
-        stats=expand(os.path.join(OUT,"Quality/Assembly_filter/{file}/storage/bin_stats.analyze.tsv"), file=READS),
+        stats=expand(os.path.join(OUT,"Assembly/{file}/storage/bin_stats.analyze.tsv"), file=READS),
     params:
-        log=expand(os.path.join(OUT,"Quality/Assembly_filter/{file}/lineage.log"), file=READS),
-    conda:
-        "envs/r.yml"
+        log=expand(os.path.join(OUT,"Assembly/{file}/lineage.log"), file=READS),
+        outpref=OUT,
     log:
-        os.path.join(OUT,"report/checkm_graph.log"),
+        os.path.join(OUT,"report/checkm_stats.log"),
+    benchmark:
+        os.path.join(OUT,"benchmark/checkm_graph.benchmark"),
+    resources:
+        mem="1G"
+    threads: 1        
+    output:
+        stats=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
+    shell:
+        """
+        python /panfs/roles/Panpiper/panpiper/workflow/scripts/checkm_bin-stats.py {input.stats} {params.outpref} &> {log}
+        """
+
+rule checkm_to_graph2:
+    input:
+        stats=expand(os.path.join(OUT,"Assembly/{file}/storage/bin_stats.analyze.tsv"), file=READS),
+    params:
+        log=expand(os.path.join(OUT,"Assembly/{file}/lineage.log"), file=READS),
+        outpref=OUT,
+    log:
+        os.path.join(OUT,"report/checkm_log.log"),
     benchmark:
         os.path.join(OUT,"benchmark/checkm_graph.benchmark"),
     resources:
@@ -95,18 +114,15 @@ rule checkm_to_graph:
     threads: 1        
     output:
         png=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
-        stats=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
     shell:
         """
-        Rscript panpiper/workflow/scripts/checkm-log.R {params.log}  &> {log}
-        Rscript panpiper/workflow/scripts/checkm_bin-stats.R {input.stats}  &> {log}
+        python /panfs/roles/Panpiper/panpiper/workflow/scripts/checkm-log.py {params.log} {params.outpref} &> {log}
         """
-
 
 rule fastani:
     input:
         ref=REFERENCE,
-        file=os.path.join(OUT,"Quality/Assembly_filter/{file}/{file}.fna"),
+        file=os.path.join(OUT,"Assembly/{file}/{file}.fna"),
     conda:
         "envs/fastani.yml"
     log:
@@ -117,7 +133,7 @@ rule fastani:
     benchmark:
         os.path.join(OUT,"benchmark/fastani_{file}.benchmark"),    
     output:
-        temp(os.path.join(OUT,"Quality/FastANI/{file}.txt")),
+        os.path.join(OUT,"Quality/FastANI/{file}.txt"),
     shell:
         "fastANI -q {input.file} -r {input.ref} -o {output} &> {log}"
 
