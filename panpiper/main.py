@@ -28,10 +28,9 @@ WORKFLOW_ASSEMBLY = os.path.join(_ROOT, 'workflow', 'assembly.smk')
 WORKFLOW_QUALITY = os.path.join(_ROOT, 'workflow', 'quality.smk')
 WORKFLOW_PANGENOME = os.path.join(_ROOT, 'workflow', 'pangenome.smk')
 WORKFLOW_PYSEER = os.path.join(_ROOT, 'workflow', 'pyseer.smk')
-
+WORKFLOW_SCRIPTS = os.path.join(_ROOT, 'workflow', 'scripts')
 
 def cli():
-
     ########## Arguments ##########
     ap = argparse.ArgumentParser(description='Package version ', add_help=False,
                                  allow_abbrev=False, formatter_class=RawTextHelpFormatter)
@@ -88,18 +87,26 @@ def cli():
                      help='Max number of contigs', default=1000, type=int)
     app.add_argument('--n50', help='N50 cutoff', default=5000, type=int)
     app.add_argument('--eggnog_dir', help='Path to the eggnog database directory',
-                     default="/panfs/roles/Panpiper/panpiper/databases/eggnog", type=str)
-    app.add_argument('--kraken_dir', help='Path to the kraken2 database directory',
-                     default="/panfs/roles/Panpiper/panpiper/databases/kraken", type=str)
+                     default=os.path.join(_ROOT, "databases", "eggnog"), type=str)
     app.add_argument('--bakta_dir', help='Path to the bakta database directory',
-                     default="/panfs/roles/Panpiper/panpiper/databases/bakta", type=str)
+                     default=os.path.join(_ROOT, "databases", "bakta"), type=str)
     app.add_argument(
         '--pheno_column', help='The column in the phenotype file to use for the association study', type=str)
     app.add_argument(
         '--max_jobs', help='Maximum number of cluster jobs [%(default)s]', default=40, type=int)
+    app.add_argument('--scripts_dir', help='Directory of scripts in package, do not change unless you have modified the scripts',
+        type=str, default=WORKFLOW_SCRIPTS)
 
     ########## Workflow ##########
     master = Test(ap)
+
+    # Create the directory if it doesn't exist
+    if not os.path.exists(master.eggnog_dir):
+        os.makedirs(master.eggnog_dir)
+
+    # Create the directory if it doesn't exist
+    if not os.path.exists(master.bakta_dir):
+        os.makedirs(master.bakta_dir)
 
     wf = Workflow(master)
 
@@ -127,7 +134,7 @@ def cli():
     elif (master.workflow == "pangenome"):
         logging.info('Run pangenome creation and analysis')
         logging.info('The parameters used in this study are- Eggnog Database Directory: ' + master.eggnog_dir +
-                     ', Kraken Database Directory: ' + master.kraken_dir + ', Bakta Database Directory: ' + master.bakta_dir)
+                     ', Bakta Database Directory: ' + master.bakta_dir)
         wf.run(snakefile=WORKFLOW_PANGENOME)
 
     # If workflow is set to Pyseer

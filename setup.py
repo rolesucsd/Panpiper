@@ -15,7 +15,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="panpiper", 
-    version="0.1.1",
+    version="0.1.2",
     license='BSD-3-Clause',
     author="Renee Oles",
     author_email="roles@health.ucsd.edu",
@@ -29,10 +29,15 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Topic :: Software Development :: Libraries :: Python Modules",
-        "Development Status :: 1 - Beta"],
+        "Development Status :: 3 - Alpha"],
     python_requires='>=3.5',
     install_requires=[
-        "setuptools"],
+        "setuptools",
+        "matplotlib",
+        "seaborn",
+        "scikit-learn",
+        "scikit-bio",
+        "umap-learn"],
     entry_points = {
         'console_scripts': ['panpiper = panpiper.main:cli']
     },

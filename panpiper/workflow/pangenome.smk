@@ -4,6 +4,7 @@ Date Updated: 1/4/2022
 Purpose: Construct pangenome
 """
 import os
+import sys
 import subprocess
 import math
 import distutils.util
@@ -15,6 +16,7 @@ OUT = config['out']
 FASTA = config['fasta']
 SAMPLE_LIST = config['list']
 PARAMS = config['params']
+PATH = config['scripts']
 
 with open(PARAMS, 'r') as fh:   
     fl = [x.strip().split() for x in fh.readlines()]
@@ -33,7 +35,6 @@ filtered = read_filtered_files()
 # Output
 rule all:
     input:
-        os.path.join(OUT,"Pangenome/Summary/amr.png"),
         os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.bwt"),
         os.path.join(OUT,"Pangenome/Summary/core_gene_alignment.aln.iqtree"),
         os.path.join(OUT,"Pangenome/Unitig/unitig.pyseer"),
@@ -75,7 +76,8 @@ rule setup:
     input:
         expand(os.path.join(FASTA, "{file}/{file}.fna"), file=filtered),
     params:
-        os.path.join(OUT,"Pangenome")
+        outdir=os.path.join(OUT,"Pangenome"),
+        path=PATH,
     conda:
         "envs/amrfinder.yml"
     log:
@@ -84,16 +86,12 @@ rule setup:
         os.path.join(OUT,"benchmark/setup.benchmark"),
     output:
         os.path.join(OUT,"Pangenome/Unitig/unitig.list"),
-        os.path.join(OUT,"Pangenome/Phylogroups/poppunk.list"),
     shell:
         """
-        chmod u+x panpiper/workflow/scripts/setup.sh
-        panpiper/workflow/scripts/setup.sh {input} {params} &> {log}
+        chmod u+x {params.path}/setup.sh
+        {params.path}/setup.sh {input} {params.outdir} &> {log}
         """
 
-
-# Bakta will annotate individual assemblies and prepare them for pangenome construction
-# About 10 minutes per sample
 rule bakta_multiple:
     input:
         gen=os.path.join(FASTA,"{file}/{file}.fna"),
@@ -114,7 +112,9 @@ rule bakta_multiple:
         fna=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.fna"),
     shell:
 #        "bakta --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} --locus-tag {params.name} {input.gen} &> {log}"
-        "bakta --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} {input.gen} &> {log}"
+        """
+        bakta --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} {input.gen} &> {log}
+        """
 
 
 # Panaroo is an updated version of Roary to create a pangenome
@@ -141,15 +141,17 @@ rule panaroo:
 rule translate:
     input:
         os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
+    params:
+        path=PATH,
     output:
         gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.faa"),
     shell:
-        "python panpiper/workflow/scripts/nc_aa_translate.py {input} {output}"
+        "python {params.path}/nc_aa_translate.py {input} {output}"
 
 # Bakta will annotate the pangenome
 rule bakta_pan:
     input:
-        gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.faa"),
+        gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
         db=os.path.join(BAKTA, "bakta.db"),
     params:
         db=BAKTA,
@@ -162,9 +164,11 @@ rule bakta_pan:
     benchmark:
         os.path.join(OUT,"benchmark/bakta_pan.benchmark"),
     output:
-        fna=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.tsv"),
+        genes=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.tsv"),
+        fasta=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.faa"),
+        gff=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.gff3"),
     shell:
-        "bakta_proteins --db {params.db} --output {params.outdir} --prefix {params.name} {input.gen} &> {log}"
+        "bakta --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} {input.gen} &> {log}"
 
 # Insert bakta pan (there is a bakta protein version that can annotate the pangenome)
 
@@ -209,12 +213,13 @@ rule fasttree:
 
 # Build more accurate tree using fasttree as a starting point
 # This step infers topology 
+# See what these parameters meant in old method: and GTRCAT -F -f D
 rule raxml:
     input:
         tre=os.path.join(OUT,"Pangenome/Phylogeny/fasttree.nwk"),
         aln=os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
     params:
-        outdir=os.path.join(OUT,"Pangenome/Phylogeny"),
+        outdir=os.path.join(OUT,"Pangenome/Phylogeny/two"),
     conda:
         "envs/raxml.yml",
     log:
@@ -222,9 +227,9 @@ rule raxml:
     benchmark:
         os.path.join(OUT,"benchmark/raxml.benchmark"),
     output:
-        os.path.join(OUT,"Pangenome/Phylogeny/RAxML_result.tree2"),
+        os.path.join(OUT,"Pangenome/Phylogeny/two.raxml.bestTree"),
     shell:
-        "raxmlHPC-AVX2 -m GTRCAT -F -f D -s {input.aln} -t {input.tre} -p 12345 -n tree2 -w {params.outdir} &> {log}"
+        "raxml-ng --model GTR+G --msa {input.aln} --tree {input.tre} --seed 12345 --prefix {params.outdir} &> {log}"
 
 
 # Continue to build tree from RAXML with iqtree
@@ -234,7 +239,7 @@ rule raxml:
 rule iqtree:
     input:
         aln=os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
-        tre=os.path.join(OUT,"Pangenome/Phylogeny/RAxML_result.tree2"),
+        tre=os.path.join(OUT,"Pangenome/Phylogeny/two.raxml.bestTree"),
     params:
         output=os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln.iqtree"),
     conda:
@@ -250,64 +255,6 @@ rule iqtree:
         iqtree -m GTR+I+G -nt AUTO -s {input.aln} -te {input.tre} &> {log}
         cp {params.output} {output}
         """
-
-# Identify antibiotic resistance in the all the samples
-# TODO: Does snakemake allow optional parameters? 
-rule amrfinder:
-    input:
-        fasta=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.faa"),
-        gff=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff3"),
-    params:
-        mut=os.path.join(OUT,"Pangenome/AMR/report_mut.txt"),
-    conda:
-        "envs/amrfinder.yml"
-    log:
-        os.path.join(OUT,"report/amrfinder_{file}.log"),
-    benchmark:
-        os.path.join(OUT,"benchmark/armfinder_{file}.benchmark"),
-    output:
-        os.path.join(OUT,"Pangenome/AMR/{file}.txt"),
-    shell:
-        """
-        amrfinder -p {input.fasta} --plus --threads 20 --mutation_all {params.mut} -o {output} &> {log}
-        """
-
-# Summarize antibiotic resistance accross all files
-rule concat_amr:
-    input:
-        expand(os.path.join(OUT,"Pangenome/AMR/{file}.txt"), file=filtered),
-    log:
-        os.path.join(OUT,"report/concat_amr.log"),
-    resources:
-        mem="1G"
-    threads: 1
-    benchmark:
-        os.path.join(OUT,"benchmark/concat_amr.benchmark"),
-    output:
-        os.path.join(OUT,"Pangenome/Summary/AMR.txt"),
-    shell:
-        "python panpiper/workflow/scripts/concat_amrfinder.py -i {input} -o {output} &> {log}"
-
-
-# Summarize antibiotic resistance accross all files
-rule graph_amr:
-    input:
-        os.path.join(OUT,"Pangenome/Summary/AMR.txt"),
-    params:
-        os.path.join(OUT,"Pangenome/Summary"),
-    conda:
-        "envs/r.yml"
-    log:
-        os.path.join(OUT,"report/graph_amr.log"),
-    benchmark:
-        os.path.join(OUT,"benchmark/graph_amr.benchmark"),
-    resources:
-        mem="1G"
-    threads: 1
-    output:
-        os.path.join(OUT,"Pangenome/Summary/amr.png"),
-    shell:
-        "Rscript panpiper/workflow/scripts/AMR_heatmap.R {input} {params} &> {log}"
 
 rule eggnog_mapper:
     input:
@@ -392,8 +339,8 @@ rule process_data:
 rule genes_long:
     input:
         clusters=os.path.join(OUT,"Pangenome/Mash/phylogroups.txt"),
-    params:
         genes=os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence_roary.csv"),
+    params:
         output=os.path.join(OUT,"Pangenome/Summary/"),
     output:
         os.path.join(OUT,"Pangenome/Summary/genes_long.txt"),

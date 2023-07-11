@@ -5,6 +5,7 @@ import re
 def genes_long(genes, clusters, output):
     # Load data
     genes = pd.read_csv(genes, header=0, dtype={'Gene': str}, low_memory=False, comment='#')
+    clusters = pd.read_csv(clusters, sep="\t")
     genes = genes.drop(genes.columns[[6, 7, 8, 9, 10]], axis=1)
     genes = genes.iloc[:, list([0, 2, 3]) + list(range(9, genes.shape[1]))]
 
@@ -27,12 +28,18 @@ def genes_long(genes, clusters, output):
 
     return(genes_long) 
 
-def gene_matrix_phylogroup(genes_long_temp, output):
+def gene_matrix_phylogroup(genes_long, output):
     # Group and summarize by Gene and Phylogroup
-    genes_phylo = genes_long_temp.iloc[:, [0, 3, 5, 6]]
+    genes_long = pd.read_csv(genes_long, sep="\t")
+    genes_long['presence'] = 0
+    genes_long.loc[genes_long['contig'].notna(), 'presence'] = 1
+
+    # Group and summarize by Gene and Phylogroup
+    genes_phylo = genes_long.iloc[:, [0, 3, 5, 6]]
     genes_phylo = genes_phylo.drop_duplicates()
     genes_phylo = genes_phylo.iloc[:, [0, 2, 3]]
     genes_phylo = genes_phylo.groupby(["Gene", "Phylogroup"]).agg({"presence": "sum"}).reset_index()
+
 
     # Pivot table and calculate percentages
     genes_phylo = genes_phylo.pivot(index='Gene', columns='Phylogroup', values='presence').fillna(0)
@@ -70,7 +77,7 @@ def process_data(bakta, genes, eggnog, output):
     # Load data
     bakta = pd.read_csv(bakta, delimiter="\t", header=0, comment='#')
     genes = pd.read_csv(genes, delimiter=",", low_memory=False, header=0, comment='#')
-    eggnog = pd.read_csv(eggnog, delimiter="\t", header=0, comment='##')
+    eggnog = pd.read_csv(eggnog, delimiter="\t", header=0, comment='#')
     # Remove the '#' from the header row
     eggnog.columns = eggnog.columns.str.lstrip('#')
 

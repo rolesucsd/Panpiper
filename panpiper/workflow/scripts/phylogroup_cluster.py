@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.decomposition import PCA
@@ -16,6 +17,8 @@ import os
 import umap
 
 def cluster_samples(mash_file, output_folder):
+    matplotlib.use('Agg')
+
     # Load data
     mash = pd.read_csv(mash_file, sep="\t", index_col=0)
     # Update row and column names
@@ -112,7 +115,8 @@ def cluster_samples(mash_file, output_folder):
     plt.savefig(f"{output_folder}/mash_MDS.png", dpi=300, bbox_inches='tight')
 
     # Perform t-SNE on the distance matrix
-    tsne = TSNE(n_components=2)
+    perplexity_value = min(30, len(mash) - 1)  # Choose a maximum perplexity value based on the number of samples
+    tsne = TSNE(n_components=2, perplexity=perplexity_value)
     embedding = tsne.fit_transform(mash)
 
     # Create a DataFrame with the t-SNE coordinates and cluster labels

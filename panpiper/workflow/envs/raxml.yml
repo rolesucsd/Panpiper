@@ -2,4 +2,4 @@ name: raxml
 channels:
   - bioconda
 dependencies:
-  - raxml=8.2.12
+  - raxml-ng=1.2.0

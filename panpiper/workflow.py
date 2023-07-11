@@ -42,7 +42,6 @@ class Workflow(object):
                '--use-conda',
                '--latency-wait', '20',
                '--rerun-incomplete',
-               '--keep-going',
                '--jobs',str(self.max_jobs),
                '-s', snakefile,
                '--config',
@@ -56,6 +55,7 @@ class Workflow(object):
                'tree='+self.tree,
                'genes='+self.genes,
                'pheno='+self.pheno,
+               'scripts='+self.scripts_dir,
                'params='+self.params]
 
         # If run on cluster
