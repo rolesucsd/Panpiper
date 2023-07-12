@@ -15,6 +15,7 @@ REFERENCE = config['ref']
 PARAMS = config['params']
 SAMPLE_LIST = config['list']
 SAMPLES_OUT = os.path.join(OUT, 'Quality/quality_report.html')
+PATH = config['scripts']
 
 with open(PARAMS, 'r') as fh:   
     fl = [x.strip().split() for x in fh.readlines()]
@@ -38,10 +39,10 @@ rule all:
 
 
 # Remove contigs smaller than 500 bp
-# 30 sec per file
+# 30 sec per filea
 rule contig_filter:
     input:
-        assembly=os.path.join(OUT,"Assembly/{file}/contigs.fa"),
+        assembly=os.path.join(FASTA,"{file}/contigs.fa"),
     params:
         contig=500,
     conda:
@@ -54,7 +55,7 @@ rule contig_filter:
     benchmark:
         os.path.join(OUT,"benchmark/prokka_filter_{file}.benchmark"),    
     output:
-        fna=os.path.join(OUT,"Assembly/{file}/{file}.fna"),
+        fna=os.path.join(FASTA,"{file}/{file}.fna"),
     shell:
         "reformat.sh in={input.assembly} out={output} minlength={params.contig} &> {log}"
 
@@ -62,17 +63,17 @@ rule contig_filter:
 # 5 minutes per sample
 rule run_checkm:
     input:
-        file=os.path.join(OUT,"Assembly/{file}/{file}.fna"),
+        file=os.path.join(FASTA,"{file}/{file}.fna"),
     params:
-        binset=os.path.join(OUT,"Assembly/{file}"),
+        binset=os.path.join(FASTA,"{file}"),
     conda:
         "envs/checkm.yml"
     log:
-        log=os.path.join(OUT,"Assembly/{file}/lineage.log"),
+        log=os.path.join(FASTA,"{file}/lineage.log"),
     benchmark:
         os.path.join(OUT,"benchmark/checkm_{file}.benchmark"),
     output:
-        stats=os.path.join(OUT,"Assembly/{file}/storage/bin_stats.analyze.tsv"),
+        stats=os.path.join(FASTA,"{file}/storage/bin_stats.analyze.tsv"),
     shell:
         """
         checkm lineage_wf -t 20 -x fna {params.binset} {params.binset} &> {log}
@@ -81,10 +82,11 @@ rule run_checkm:
 
 rule checkm_to_graph:
     input:
-        stats=expand(os.path.join(OUT,"Assembly/{file}/storage/bin_stats.analyze.tsv"), file=READS),
+        stats=expand(os.path.join(FASTA,"{file}/storage/bin_stats.analyze.tsv"), file=READS),
     params:
-        log=expand(os.path.join(OUT,"Assembly/{file}/lineage.log"), file=READS),
+        log=expand(os.path.join(FASTA,"{file}/lineage.log"), file=READS),
         outpref=OUT,
+        path=PATH,
     log:
         os.path.join(OUT,"report/checkm_stats.log"),
     benchmark:
@@ -96,15 +98,16 @@ rule checkm_to_graph:
         stats=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
     shell:
         """
-        python /panfs/roles/Panpiper/panpiper/workflow/scripts/checkm_bin-stats.py {input.stats} {params.outpref} &> {log}
+        python {params.path}/checkm_bin-stats.py {input.stats} {params.outpref} &> {log}
         """
 
 rule checkm_to_graph2:
     input:
-        stats=expand(os.path.join(OUT,"Assembly/{file}/storage/bin_stats.analyze.tsv"), file=READS),
+        stats=expand(os.path.join(FASTA,"{file}/storage/bin_stats.analyze.tsv"), file=READS),
     params:
-        log=expand(os.path.join(OUT,"Assembly/{file}/lineage.log"), file=READS),
+        log=expand(os.path.join(FASTA,"{file}/lineage.log"), file=READS),
         outpref=OUT,
+        path=PATH,
     log:
         os.path.join(OUT,"report/checkm_log.log"),
     benchmark:
@@ -116,13 +119,13 @@ rule checkm_to_graph2:
         png=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
     shell:
         """
-        python /panfs/roles/Panpiper/panpiper/workflow/scripts/checkm-log.py {params.log} {params.outpref} &> {log}
+        python {params.path}/checkm-log.py {params.log} {params.outpref} &> {log}
         """
 
 rule fastani:
     input:
         ref=REFERENCE,
-        file=os.path.join(OUT,"Assembly/{file}/{file}.fna"),
+        file=os.path.join(FASTA,"{file}/{file}.fna"),
     conda:
         "envs/fastani.yml"
     log:
@@ -163,6 +166,7 @@ rule filter_files:
         ac=ANI_CUTOFF,
         cn=CONTIG_NUMBER,
         n=N50,
+        path=PATH,
     log:
         os.path.join(OUT,"report/filter_files.log"),
     benchmark:
@@ -174,7 +178,7 @@ rule filter_files:
         os.path.join(OUT,"Quality/sample_list.txt"),
     shell:
         """
-        python panpiper/workflow/scripts/filter_isolates.py -o {params.outpath} -a {input.ani} -l {params.checkm} -s {input.stat} -r {params.ref} -ac {params.ac} -cn {params.cn} -n {params.n} &> {log}
+        python {params.path}/filter_isolates.py -o {params.outpath} -a {input.ani} -l {params.checkm} -s {input.stat} -r {params.ref} -ac {params.ac} -cn {params.cn} -n {params.n} &> {log}
         """
 
 rule print_results:

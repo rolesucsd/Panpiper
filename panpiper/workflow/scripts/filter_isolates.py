@@ -93,10 +93,9 @@ def checkm_stats_filter(sample_list, file, contig_number, N50):
     # If it is above a certain value in each of the categories
     # Contig num below input, N50 above 1e5
     # Subset the dataframe for the failed samples
-    sample_fail = df[(df["contigs"] > contig_number) | (df["N50 contigs"] < N50) ]
-
-    df = df[df["contigs"] <= contig_number]
-    df = df[df["N50 contigs"] >= N50]
+    sample_fail = df[(df["# contigs"] > contig_number) | (df["N50 (contigs)"] < N50) ]
+    df = df[df["# contigs"] <= contig_number]
+    df = df[df["N50 (contigs)"] >= N50]
     # Return the list of samples and the the failed dataframe
     sample_list = df["Sample"].tolist()
     sample_list = [*set(sample_list)]
