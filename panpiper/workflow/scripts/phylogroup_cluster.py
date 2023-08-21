@@ -1,3 +1,11 @@
+# ----------------------------------------------------------------------------
+# Copyright (c) 2022--, Panpiper development team.
+#
+# Distributed under the terms of the Modified BSD License.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+# ----------------------------------------------------------------------------
+
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -6,9 +14,7 @@ import seaborn as sns
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from scipy.spatial.distance import pdist, squareform
-from skbio.stats.distance import permanova
 from scipy.cluster.hierarchy import linkage, fcluster, cut_tree
-from skbio import DistanceMatrix
 import random
 from sklearn.cluster import DBSCAN
 from sklearn.manifold import MDS

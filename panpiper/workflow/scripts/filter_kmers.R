@@ -19,5 +19,6 @@ pattern <- read.delim(pattern, header=FALSE)
 file$pv_adj <- file$`lrt-pvalue` - pattern[2,2]
 # The unitigs are filtered by the threshold
 file <-file[file$`lrt-pvalue` <= pattern[2,2],]
+#file <-file[file$`lrt-pvalue` <= 0.05,]
 file <- file[order(file$`lrt-pvalue`),]
 write.table(file,output,quote=FALSE,col.names = TRUE,row.names = FALSE, sep="\t")

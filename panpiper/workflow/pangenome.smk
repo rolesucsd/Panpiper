@@ -1,3 +1,11 @@
+# ----------------------------------------------------------------------------
+# Copyright (c) 2022--, Panpiper development team.
+#
+# Distributed under the terms of the Modified BSD License.
+#
+# The full license is in the file COPYING.txt, distributed with this software.
+# ----------------------------------------------------------------------------
+
 """
 Authors: Renee Oles
 Date Updated: 1/4/2022
@@ -53,7 +61,7 @@ rule bakta:
     benchmark:
         os.path.join(OUT,"benchmark/bakta.benchmark"),
     output:
-        os.path.join(BAKTA, "bakta.db"),
+        os.path.join(BAKTA, "db/bakta.db"),
     shell:
         "bakta_db download --output {input} &> {log}"
 
@@ -95,9 +103,9 @@ rule setup:
 rule bakta_multiple:
     input:
         gen=os.path.join(FASTA,"{file}/{file}.fna"),
-        db=os.path.join(BAKTA, "bakta.db"),
+        db=os.path.join(BAKTA, "db/bakta.db"),
     params:
-        db=BAKTA,
+        db=os.path.join(BAKTA, "db"),
         name="{file}",
         outdir=os.path.join(OUT,"Pangenome/Bakta/{file}"),
     conda:
@@ -152,9 +160,9 @@ rule translate:
 rule bakta_pan:
     input:
         gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
-        db=os.path.join(BAKTA, "bakta.db"),
+        db=os.path.join(BAKTA, "db/pfam.h3p"),
     params:
-        db=BAKTA,
+        db=os.path.join(BAKTA, "db"),
         name="pan_genome_reference",
         outdir=os.path.join(OUT,"Pangenome/Summary/"),
     conda:

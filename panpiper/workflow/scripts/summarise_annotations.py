@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # Copyright 2017 Marco Galardini and John Lees
+# Edited by Renee Oles 2023
 
 '''Summarise k-mer annotation at the gene level'''
 
@@ -26,13 +27,19 @@ def get_options():
 def update_summary(summary, gene, pval, af, beta):
     if summary[gene] != {}:
         summary[gene]['count'] += 1
-        summary[gene]['af'] += af
+        if af > 0.5:
+            summary[gene]['af'] += 1 - af
+        else:
+            summary[gene]['af'] += af
         summary[gene]['beta'] += beta
         if log10p > summary[gene]['maxp']:
             summary[gene]['maxp'] = log10p
     else:
         summary[gene]['count'] = 1
-        summary[gene]['af'] = af
+        if af > 0.5:
+            summary[gene]['af'] = 1 - af
+        else:
+            summary[gene]['af'] = af
         summary[gene]['beta'] = beta
         summary[gene]['maxp'] = log10p
 

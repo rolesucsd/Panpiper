@@ -36,8 +36,8 @@ setuptools.setup(
         "matplotlib",
         "seaborn",
         "scikit-learn",
-        "scikit-bio",
-        "umap-learn"],
+        "umap-learn",
+        "biopython"],
     entry_points = {
         'console_scripts': ['panpiper = panpiper.main:cli']
     },
