@@ -92,6 +92,9 @@ class Test(object):
             if file.endswith(".fastq"):
                 logging.debug('Fastq files found')
                 return()
+            if file.endswith(".fastq.gz"):
+                logging.debug('Fastq files found')
+                return()
 
         logging.error('No fastq files found in directory')
         sys.exit()

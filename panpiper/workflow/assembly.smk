@@ -20,7 +20,7 @@ import distutils.util
 OUT = config['out']
 FASTQ = config['fastq']
 ASSEMBLY_OUT = os.path.join(OUT, 'Assembly/complete_assembly_files.txt')
-(READS,) = glob_wildcards(os.path.join(FASTQ,"{file}_2.fastq"))
+(READS,) = glob_wildcards(os.path.join(FASTQ,"{file}_2.fastq.gz"))
 
 rule all:
     input:
@@ -31,8 +31,8 @@ rule all:
 # Time: 5-40 minutes per sample
 rule shovill:
     input:
-        read1=os.path.join(FASTQ, '{file}_1.fastq'),
-        read2=os.path.join(FASTQ, '{file}_2.fastq'),
+        read1=os.path.join(FASTQ, '{file}_1.fastq.gz'),
+        read2=os.path.join(FASTQ, '{file}_2.fastq.gz'),
     params:
         prefix=os.path.join(OUT, 'Assembly/{file}'),
         tmp="tmp",

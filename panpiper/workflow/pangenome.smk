@@ -216,7 +216,7 @@ rule fasttree:
     output:
         os.path.join(OUT,"Pangenome/Phylogeny/fasttree.nwk"),
     shell:
-        "FastTree -gtr -nt -gamma -seed 12345 {input} > {output}"
+        "FastTree  -intree -gtr -nt -gamma -seed 12345 {input} > {output}"
 
 
 # Build more accurate tree using fasttree as a starting point

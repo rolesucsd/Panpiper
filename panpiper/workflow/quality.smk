@@ -106,7 +106,7 @@ rule checkm_to_graph:
         stats=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
     shell:
         """
-        python {params.path}/checkm_bin-stats.py {input.stats} {params.outpref} &> {log}
+        python {params.path}/checkm_bin-stats.py {params.outpref} {input.stats} &> {log}
         """
 
 rule checkm_to_graph2:
