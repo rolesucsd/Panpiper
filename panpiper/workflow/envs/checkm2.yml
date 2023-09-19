@@ -1,0 +1,8 @@
+name: checkm2
+channels:
+  - bioconda
+  - r
+  - defaults
+  - conda-forge
+dependencies:
+  - checkm2=1.0.1

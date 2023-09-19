@@ -68,66 +68,43 @@ rule contig_filter:
         "reformat.sh in={input.assembly} out={output} minlength={params.contig} &> {log}"
 
 
-# 5 minutes per sample
-rule run_checkm:
+rule run_checkm2:
     input:
         file=os.path.join(FASTA,"{file}/{file}.fna"),
     params:
-        binset=os.path.join(FASTA,"{file}"),
+        binset=os.path.join(FASTA,"{file}/checkm"),
+        checkmdb="/panfs/roles/Panpiper/panpiper/databases/checkm2/CheckM2_database/uniref100.KO.1.dmnd"
     conda:
-        "envs/checkm.yml"
+        "envs/checkm2.yml"
     log:
-        log=os.path.join(FASTA,"{file}/lineage.log"),
+        log=os.path.join(OUT,"report/checkm2_{file}.log"),
     benchmark:
-        os.path.join(OUT,"benchmark/checkm_{file}.benchmark"),
+        os.path.join(OUT,"benchmark/checkm2_{file}.benchmark"),
     output:
-        stats=os.path.join(FASTA,"{file}/storage/bin_stats.analyze.tsv"),
+        stats=os.path.join(FASTA,"{file}/checkm/quality_report.tsv"),
     shell:
         """
-        checkm lineage_wf -t 20 -x fna {params.binset} {params.binset} &> {log}
+        checkm2 predict --threads 20 --input {input} --database_path {params.checkmdb} --output-directory {params.binset} --force &> {log}
         """
-
 
 rule checkm_to_graph:
     input:
-        stats=expand(os.path.join(FASTA,"{file}/storage/bin_stats.analyze.tsv"), file=READS),
+        stats=expand(os.path.join(FASTA,"{file}/checkm/quality_report.tsv"), file=READS),
     params:
-        log=expand(os.path.join(FASTA,"{file}/lineage.log"), file=READS),
         outpref=OUT,
         path=PATH,
     log:
-        os.path.join(OUT,"report/checkm_stats.log"),
+        os.path.join(OUT,"report/checkm_cat.log"),
     benchmark:
         os.path.join(OUT,"benchmark/checkm_graph.benchmark"),
     resources:
         mem="1G"
     threads: 1        
     output:
-        stats=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
+        stats=os.path.join(OUT,"Quality/CheckM/checkm_cat.txt"),
     shell:
         """
-        python {params.path}/checkm_bin-stats.py {params.outpref} {input.stats} &> {log}
-        """
-
-rule checkm_to_graph2:
-    input:
-        stats=expand(os.path.join(FASTA,"{file}/storage/bin_stats.analyze.tsv"), file=READS),
-    params:
-        log=expand(os.path.join(FASTA,"{file}/lineage.log"), file=READS),
-        outpref=OUT,
-        path=PATH,
-    log:
-        os.path.join(OUT,"report/checkm_log.log"),
-    benchmark:
-        os.path.join(OUT,"benchmark/checkm_graph.benchmark"),
-    resources:
-        mem="1G"
-    threads: 1        
-    output:
-        png=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
-    shell:
-        """
-        python {params.path}/checkm-log.py {params.log} {params.outpref} &> {log}
+        python {params.path}/checkm_cat.py {params.outpref} {input.stats} &> {log}
         """
 
 rule fastani:
@@ -166,13 +143,11 @@ rule fastani_concat:
 rule filter_files:
     input:
         ani=os.path.join(OUT,"Quality/FastANI/fastani_summary.txt"),
-        stat=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
+        checkm=os.path.join(OUT,"Quality/CheckM/checkm_cat.txt"),
     params:
-        checkm=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
         outpath=os.path.join(OUT,"Quality"),
         ref=PARAMS_REF,
         ac=ANI_CUTOFF,
-        cn=CONTIG_NUMBER,
         n=N50,
         path=PATH,
     log:
@@ -186,14 +161,13 @@ rule filter_files:
         os.path.join(OUT,"Quality/sample_list.txt"),
     shell:
         """
-        python {params.path}/filter_isolates.py -o {params.outpath} -a {input.ani} -l {params.checkm} -s {input.stat} -r {params.ref} -ac {params.ac} -cn {params.cn} -n {params.n} &> {log}
+        python {params.path}/filter_isolates.py -o {params.outpath} -a {input.ani} -k {input.checkm} -r {params.ref} -ac {params.ac} -n {params.n} &> {log}
         """
 
 rule print_results:
     input:
         ani=os.path.join(OUT,"Quality/FastANI/fastani_summary.txt"),
-        stat=os.path.join(OUT,"Quality/CheckM/checkm_stats.txt"),
-        log=os.path.join(OUT,"Quality/CheckM/checkm_log.txt"),
+        checkm=os.path.join(OUT,"Quality/CheckM/checkm_cat.txt"),
         passed=os.path.join(OUT,"Quality/sample_list.txt"),
     params:
         ref=PARAMS_REF,
@@ -210,6 +184,6 @@ rule print_results:
     output:
         SAMPLES_OUT,
     shell:
-        "Rscript -e \"rmarkdown::render('panpiper/workflow/scripts/quality_report.Rmd', output_dir = '{params.outdir}', params=list(checkm = '{input.stat}', log = '{input.log}', ani = '{input.ani}', passed = '{input.passed}', ref = '{params.ref}'))\" &> {log}"
+        "Rscript -e \"rmarkdown::render('panpiper/workflow/scripts/quality_report.Rmd', output_dir = '{params.outdir}', params=list(checkm = '{input.checkm}', ani = '{input.ani}', passed = '{input.passed}', ref = '{params.ref}'))\" &> {log}"
 
 

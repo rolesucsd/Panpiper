@@ -1,20 +1,13 @@
-# ----------------------------------------------------------------------------
-# Copyright (c) 2022--, Panpiper development team.
-#
-# Distributed under the terms of the Modified BSD License.
-#
-# The full license is in the file COPYING.txt, distributed with this software.
-# ----------------------------------------------------------------------------
-
 import pandas as pd
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from scipy.spatial.distance import pdist, squareform
+from skbio.stats.distance import permanova
 from scipy.cluster.hierarchy import linkage, fcluster, cut_tree
+from skbio import DistanceMatrix
 import random
 from sklearn.cluster import DBSCAN
 from sklearn.manifold import MDS
@@ -23,25 +16,22 @@ import os
 import umap
 
 def cluster_samples(mash_file, output_folder):
-    matplotlib.use('Agg')
-
     # Load data
     mash = pd.read_csv(mash_file, sep="\t", index_col=0)
     # Update row and column names
     mash.index = [os.path.splitext(os.path.basename(row))[0] for row in mash.index]
     mash.columns = [os.path.splitext(os.path.basename(col))[0] for col in mash.columns]
 
-    # Convert to distance matrix
-    dist = pdist(mash, metric='euclidean')
+    # Convert condensed distance matrix to a square distance matrix
+    square_dist = squareform(mash)
 
     # Cluster using hierarchical clustering
-    linkage_matrix = linkage(dist, method='ward')
+    linkage_matrix = linkage(square_dist, method='ward')
     plt.title('Hierarchical clustering')
 
     # Perform clustering with the best number of clusters
-    max_d = 0.23 * np.max(linkage_matrix[:, 2])
+    max_d = 0.44 * np.max(linkage_matrix[:, 2])
     clusters = cut_tree(linkage_matrix, height=max_d)
-
     cluster_labels = [str(i + 1) for i in clusters.flatten()]
 
     # Plot clusters
@@ -50,7 +40,6 @@ def cluster_samples(mash_file, output_folder):
     phylogroup.to_csv(f"{output_folder}/phylogroups.txt", sep="\t", index=False)
     
     phylogroup_wide = phylogroup.copy()
-
     # Convert the 'Phylogroup' column into dummy variables
     phylogroup_dummies = pd.get_dummies(phylogroup_wide['Phylogroup'])
 
@@ -79,50 +68,32 @@ def cluster_samples(mash_file, output_folder):
     random.shuffle(unique_phylogroups)
     phylogroup_colors = {group: '#' + ''.join(random.choices('0123456789ABCDEF', k=6)) for group in unique_phylogroups}
    # phylogroup_colors = {'1': "#89B4AE", '0':"#B3A3CA"}
+   # phylogroup_colors = {'3' : "#97C079", '6': "#465AA8", '10':"#BC1F75", '8': "#DFAE41", '9': "#8773B4"}
 
     # Map the phylogroup colors to each sample in the dataframe
     row_colors = phylogroup.set_index('Sample')['Phylogroup'].map(phylogroup_colors)
 
-
-    # Plot clusters using PCA
+   # Plot clusters using PCA
     pca = PCA(n_components=2)
     pca.fit(mash)
     pca_scores = pca.transform(mash)
     pca_df = pd.DataFrame(pca_scores, columns=['PC1', 'PC2'])
     pca_df['Cluster'] = cluster_labels
+
     plt.figure()
-    sns.scatterplot(x='PC1', y='PC2', hue='Cluster', palette=phylogroup_colors, data=pca_df, legend=False)  # Add row_colors
+    sns.scatterplot(x='PC1', y='PC2', hue='Cluster', palette=phylogroup_colors, data=pca_df)  # Add row_colors
     plt.title('Clusters of samples by PCA')
     plt.xlabel(f'PC1 ({pca.explained_variance_ratio_[0]*100:.2f}%)')  # Add explained variance ratio to x-axis label
     plt.ylabel(f'PC2 ({pca.explained_variance_ratio_[1]*100:.2f}%)')  # Add explained variance ratio to y-axis label
-
     # Move the legend to the right of the graph
-    plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
+    plt.legend(title='Cluster', loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.tight_layout()
 
     # Save the plot to a PNG file
     plt.savefig(f"{output_folder}/mash_PCA.png", dpi=300, bbox_inches='tight')
 
-
-    # Perform MDS on the distance matrix
-    mds = MDS(n_components=2, dissimilarity='precomputed')
-    embedding = mds.fit_transform(mash)
-
-    # Create a DataFrame with the MDS coordinates and cluster labels
-    mds_df = pd.DataFrame(embedding, columns=['MDS1', 'MDS2'])
-    mds_df['Cluster'] = cluster_labels
-
-    # Plot the clusters using MDS
-    plt.figure()
-    sns.scatterplot(x='MDS1', y='MDS2', hue='Cluster', palette=phylogroup_colors, data=mds_df, legend=False)
-    plt.title('Clusters of samples by MDS')
-    plt.xlabel('MDS1')
-    plt.ylabel('MDS2')
-    plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
-    plt.savefig(f"{output_folder}/mash_MDS.png", dpi=300, bbox_inches='tight')
-
     # Perform t-SNE on the distance matrix
-    perplexity_value = min(30, len(mash) - 1)  # Choose a maximum perplexity value based on the number of samples
-    tsne = TSNE(n_components=2, perplexity=perplexity_value)
+    tsne = TSNE(n_components=2)
     embedding = tsne.fit_transform(mash)
 
     # Create a DataFrame with the t-SNE coordinates and cluster labels
@@ -139,8 +110,7 @@ def cluster_samples(mash_file, output_folder):
     plt.savefig(f"{output_folder}/mash_tSNE.png", dpi=300, bbox_inches='tight')
 
     # Plot heatmap of clusters with color annotations and inverted colormap
-    clustermap = sns.clustermap(np.log1p(mash), cmap='binary_r', row_cluster=True,
-                            row_colors=row_colors, row_linkage=linkage_matrix, col_linkage=linkage_matrix)
+    clustermap = sns.clustermap(mash, cmap='binary', row_cluster=True,  row_colors=row_colors, row_linkage=linkage_matrix, col_linkage=linkage_matrix)
 
     # Adjust the size of the legend
     cbar = clustermap.cax.get_position()
@@ -155,22 +125,4 @@ def cluster_samples(mash_file, output_folder):
     clustermap.ax_heatmap.set_ylabel('')
     # Save the heatmap to a file
     plt.savefig(f"{output_folder}/mash_heatmap.png", dpi=300, bbox_inches='tight')
-    
-    # Perform UMAP on the distance matrix
-    reducer = umap.UMAP(n_components=2)
-    embedding = reducer.fit_transform(mash)
-
-    # Create a DataFrame with the UMAP coordinates and cluster labels
-    umap_df = pd.DataFrame(embedding, columns=['UMAP1', 'UMAP2'])
-    umap_df['Cluster'] = cluster_labels
-
-    # Plot the clusters using UMAP
-    plt.figure()
-    sns.scatterplot(x='UMAP1', y='UMAP2', hue='Cluster', palette=phylogroup_colors, data=umap_df, legend=False)
-    plt.title('Clusters of samples by UMAP')
-    plt.xlabel('UMAP1')
-    plt.ylabel('UMAP2')
-    plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
-    plt.savefig(f"{output_folder}/mash_UMAP.png", dpi=300, bbox_inches='tight')
-
     return(phylogroup)

@@ -159,7 +159,7 @@ rule translate:
 # Bakta will annotate the pangenome
 rule bakta_pan:
     input:
-        gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
+        gen=os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.faa"),
         db=os.path.join(BAKTA, "db/pfam.h3p"),
     params:
         db=os.path.join(BAKTA, "db"),
@@ -174,9 +174,8 @@ rule bakta_pan:
     output:
         genes=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.tsv"),
         fasta=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.faa"),
-        gff=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.gff3"),
     shell:
-        "bakta --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} {input.gen} &> {log}"
+        "bakta_proteins --db {params.db} --output {params.outdir} --prefix {params.name} {input.gen} &> {log}"
 
 # Insert bakta pan (there is a bakta protein version that can annotate the pangenome)
 
@@ -216,7 +215,7 @@ rule fasttree:
     output:
         os.path.join(OUT,"Pangenome/Phylogeny/fasttree.nwk"),
     shell:
-        "FastTree  -intree -gtr -nt -gamma -seed 12345 {input} > {output}"
+        "FastTree -gtr -nt -gamma -seed 12345 {input} > {output}"
 
 
 # Build more accurate tree using fasttree as a starting point
