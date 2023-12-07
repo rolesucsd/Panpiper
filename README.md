@@ -7,12 +7,12 @@ This package conducts bacterial isolate analysis for one species.
 * Assembly
     * Using [shovill](https://github.com/tseemann/shovill) the paired fastq files are assembled and sorted into ones which pass and fail assembly
 * Quality control
-    * The assemblies are analyzed with [CheckM](https://github.com/Ecogenomics/CheckM) and [FastANI](https://github.com/ParBLiSS/FastANI)
+    * The assemblies are analyzed with [CheckM2](https://github.com/chklovski/CheckM2) and [FastANI](https://github.com/ParBLiSS/FastANI)
     * Based on user-defined thresholds the samples are sorted into ones which pass or don't pass requirements
 * Pangenome analysis
     * A pangenome is created with the assemblies using [Panaroo](https://github.com/gtonkinhill/panaroo) and annotated with [AMRFinderPlus](https://github.com/ncbi/amr), [Bakta](https://github.com/oschwengers/bakta), and [EggNOG-mapper](https://github.com/eggnogdb/eggnog-mapper)
     * The core genome alignment is used to create a phylogenetic tree with [FastTree](http://www.microbesonline.org/fasttree/), [RAxML](https://github.com/stamatak/standard-RAxML), and [IQ-TREE](https://github.com/Cibiv/IQ-TREE)
-    * The samples are divided into phylogroups with [PopPUNK](https://github.com/bacpop/PopPUNK)
+    * The samples are divided into phylogroups
 * Genome-wide association study
     * The pangenome is used with a continuous or binary phenotype to conduct a genome-wide association study with [Pyseer](https://github.com/mgalardini/pyseer)
     * The wrapper scripts used to analyze and filter the data are predominantly taken from the pyseer package.
@@ -116,6 +116,9 @@ Output:
         * genes_anno.txt - annotation of each protein in the pangenome
         * genes_long.txt - dataframe of each protein in the pangenome and corresponding proteins in each isolate
         * genes_matrix.txt - a matrix of gene presence/absence for all isolates 
+
+#### Visualization tools:
+This output can further be visualized using the streamlit app [Panpiper streamlit](https://panpipercluster.streamlit.app/)
 
 ### Genome-wide association study: 
 The gene and structure presence/absence files should be the result of Panaroo or Roary - from Panaroo this is the .RTab file. The unitig file is a result of unitig-caller; this file should be gzipped. The tree file can be any newick tree - if this pipeline has been followed to this point, we would recommend the tree file from iqtree. Finally, the reference file is a tab-delimited list of files to be used for unitig annotation. The format is file.fna file.gff2 {draft, ref}. 
