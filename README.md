@@ -146,9 +146,3 @@ To run on a compute cluster, a profile folder must be specified which should con
 ```sh
 panpiper ... --cluster --profile {profile folder}
 ```
-
-
-### Potential errors
-1. Kraken - "Error loading hash table" - you may need to request more memory 
-2. Kraken - database download errors - I suggest downloading the database manually as it can be very glitchy 
-
