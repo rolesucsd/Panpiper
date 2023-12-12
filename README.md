@@ -118,7 +118,7 @@ Output:
         * genes_matrix.txt - a matrix of gene presence/absence for all isolates 
 
 #### Visualization tools:
-This output can further be visualized using the streamlit app [Panpiper streamlit](https://panpipercluster.streamlit.app/)
+This output can further be visualized using the streamlit app [Panpiper streamlit](https://panpiper.streamlit.app/)
 
 ### Genome-wide association study: 
 The gene and structure presence/absence files should be the result of Panaroo or Roary - from Panaroo this is the .RTab file. The unitig file is a result of unitig-caller; this file should be gzipped. The tree file can be any newick tree - if this pipeline has been followed to this point, we would recommend the tree file from iqtree. Finally, the reference file is a tab-delimited list of files to be used for unitig annotation. The format is file.fna file.gff2 {draft, ref}. 
