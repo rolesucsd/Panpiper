@@ -63,16 +63,16 @@ rule contig_filter:
     benchmark:
         os.path.join(OUT,"benchmark/prokka_filter_{file}.benchmark"),    
     output:
-        fna=os.path.join(FASTA,"{file}/{file}.fna"),
+        fna=os.path.join(OUT,"Quality/Samples/{file}/{file}.fna"),
     shell:
         "reformat.sh in={input.assembly} out={output} minlength={params.contig} &> {log}"
 
 
 rule run_checkm2:
     input:
-        file=os.path.join(FASTA,"{file}/{file}.fna"),
+        file=os.path.join(OUT,"Quality/Samples/{file}/{file}.fna"),
     params:
-        binset=os.path.join(FASTA,"{file}/checkm"),
+        binset=os.path.join(OUT,"Quality/checkm"),
         checkmdb="/panfs/roles/Panpiper/panpiper/databases/checkm2/CheckM2_database/uniref100.KO.1.dmnd"
     conda:
         "envs/checkm2.yml"
@@ -81,7 +81,7 @@ rule run_checkm2:
     benchmark:
         os.path.join(OUT,"benchmark/checkm2_{file}.benchmark"),
     output:
-        stats=os.path.join(FASTA,"{file}/checkm/quality_report.tsv"),
+        stats=os.path.join(OUT,"Quality/Samples/{file}/checkm/quality_report.tsv"),
     shell:
         """
         checkm2 predict --threads 20 --input {input} --database_path {params.checkmdb} --output-directory {params.binset} --force &> {log}
@@ -89,7 +89,7 @@ rule run_checkm2:
 
 rule checkm_to_graph:
     input:
-        stats=expand(os.path.join(FASTA,"{file}/checkm/quality_report.tsv"), file=READS),
+        stats=expand(os.path.join(OUT,"Quality/Samples/{file}/checkm/quality_report.tsv"), file=READS),
     params:
         outpref=OUT,
         path=PATH,
@@ -110,7 +110,7 @@ rule checkm_to_graph:
 rule fastani:
     input:
         ref=REFERENCE,
-        file=os.path.join(FASTA,"{file}/{file}.fna"),
+        file=os.path.join(OUT,"Quality/{file}/{file}.fna"),
     conda:
         "envs/fastani.yml"
     log:

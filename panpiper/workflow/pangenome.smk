@@ -119,9 +119,8 @@ rule bakta_multiple:
         faa=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.faa"),
         fna=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.fna"),
     shell:
-#        "bakta --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} --locus-tag {params.name} {input.gen} &> {log}"
         """
-        bakta --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} {input.gen} &> {log}
+        "bakta --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} --locus-tag {params.name} {input.gen} &> {log}"
         """
 
 
@@ -177,7 +176,6 @@ rule bakta_pan:
     shell:
         "bakta_proteins --db {params.db} --output {params.outdir} --prefix {params.name} {input.gen} &> {log}"
 
-# Insert bakta pan (there is a bakta protein version that can annotate the pangenome)
 
 # The pangenome is indexed 
 rule bwa_index_pan:

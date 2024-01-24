@@ -36,8 +36,6 @@ class Workflow(object):
         snakefile: string, required
         The snakefile selected for the desired operation
         """
-        # Define core snakemake command
-        # need to edit j
         cmd = ['snakemake',
                '--use-conda',
                '--latency-wait', '20',
