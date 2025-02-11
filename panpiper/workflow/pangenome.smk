@@ -18,7 +18,9 @@ import math
 import distutils.util
 from scripts.wrangle_output import genes_long, gene_matrix_phylogroup, gene_matrix, process_data
 from scripts.phylogroup_cluster import cluster_samples
-
+import glob
+import tempfile
+import shutil
 
 OUT = config['out']
 FASTA = config['fasta']
@@ -30,15 +32,11 @@ with open(PARAMS, 'r') as fh:
     fl = [x.strip().split() for x in fh.readlines()]
 param_dict = {x[0]: x[1] for x in fl}
 
-BAKTA = param_dict["bakta_dir"]
 REF = param_dict["ref"]
+BAKTA = param_dict["bakta_dir"]
 EGGNOG = param_dict['eggnog_dir']
-
-def read_filtered_files():
-    with open(SAMPLE_LIST) as f:
-        raw_reads = [sample for sample in f.read().split('\n') if len(sample) > 0]
-        return(raw_reads)
-filtered = read_filtered_files()
+KEGG = param_dict['kegg_meta']
+COG = param_dict['cog_meta']
 
 # Output
 rule all:
@@ -49,8 +47,68 @@ rule all:
         os.path.join(OUT,"Pangenome/Summary/genes_phylogroup_matrix_perc.txt"),
         os.path.join(OUT,"Pangenome/Summary/genes_anno.txt"),
         os.path.join(OUT,"Pangenome/Summary/genes_matrix.txt"),
+        os.path.join(OUT,"Pangenome/Summary/Pangenome.Rmd"),    
+
+def find_assembly(wildcards):
+    for ext in ['fa', 'fna', 'fasta']:
+        path = os.path.join(FASTA, f"{wildcards.file}/{wildcards.file}.{ext}")
+        if os.path.isfile(path):
+            return path
+    raise ValueError(f"No assembly file found for {path} with extensions .fa, .fna, or .fasta")
+
+def read_filtered_files():
+    with open(SAMPLE_LIST) as f:
+        filtered_files = [line.strip() for line in f if line.strip()]
+    return filtered_files
+
+filtered = read_filtered_files()
+
+checkpoint find_assembly_files:
+    output: temp(os.path.join(OUT, "assembly_files_list.txt"))
+    run:
+        files_found = []
+        for sample in filtered:
+            for ext in ['fa', 'fna', 'fasta']:
+                pattern = os.path.join(FASTA, f"{sample}/{sample}.{ext}")
+                matched_files = glob.glob(pattern)
+                files_found.extend(matched_files)
+        with open(output[0], 'w') as f:
+            f.writelines(f"{file_path}\n" for file_path in files_found)
+
+def get_assembly_files(wildcards):
+    files_list_path = checkpoints.find_assembly_files.get(**wildcards).output[0]
+    filtered_files = []
+    with open(files_list_path) as f:
+        files = f.read().strip().split('\n')
+        for file in files:
+            # Correctly extracting the full sample name before the first dot
+            sample_name = os.path.basename(file).rsplit('.', maxsplit=1)[0]
+            sample_name = file
+            filtered_files.append(sample_name)
+    return filtered_files
+
+
+rule setup:
+    input: get_assembly_files
+    params:
+        outdir=os.path.join(OUT, "Pangenome"),
+        path=PATH,
+    conda:
+        "envs/amrfinder.yml",
+    log:
+        os.path.join(OUT, "report/setup.log"),
+    benchmark:
+        os.path.join(OUT, "benchmark/setup.benchmark"),
+    output:
+        os.path.join(OUT, "Pangenome/Unitig/unitig.list"),
+    shell:
+        """
+        chmod u+x {params.path}/setup.sh
+        {params.path}/setup.sh {input} {params.outdir} &> {log}
+        """
 
 # Download databases
+'''
 rule bakta:
     input:
         BAKTA,
@@ -61,9 +119,10 @@ rule bakta:
     benchmark:
         os.path.join(OUT,"benchmark/bakta.benchmark"),
     output:
-        os.path.join(BAKTA, "db/bakta.db"),
+        os.path.join(BAKTA, "db/pfam.h3p"),
     shell:
         "bakta_db download --output {input} &> {log}"
+'''
 
 rule eggnog_db:
     input:
@@ -79,31 +138,45 @@ rule eggnog_db:
     shell:
         "download_eggnog_data.py --data_dir {input}"
 
-# Set up files for downstream analysis
-rule setup:
+'''
+rule SynTracker:
     input:
-        expand(os.path.join(FASTA, "{file}/{file}.fna"), file=filtered),
+        gen=expand(os.path.join(OUT, "Pangenome/Bakta/{file}/{file}.fna"), file=filtered)
     params:
-        outdir=os.path.join(OUT,"Pangenome"),
-        path=PATH,
+        outdir=os.path.join(OUT, "Pangenome/SynTracker"),
+        ref=REF
     conda:
-        "envs/amrfinder.yml"
+        "envs/syntracker.yml"
     log:
-        os.path.join(OUT,"report/setup.log"),
+        os.path.join(OUT, "report/SynTracker.log"),
     benchmark:
-        os.path.join(OUT,"benchmark/setup.benchmark"),
+        os.path.join(OUT, "benchmark/SynTracker.benchmark"),
+    resources:
+        mem="50G"
     output:
-        os.path.join(OUT,"Pangenome/Unitig/unitig.list"),
-    shell:
-        """
-        chmod u+x {params.path}/setup.sh
-        {params.path}/setup.sh {input} {params.outdir} &> {log}
-        """
+        os.path.join(OUT, "Pangenome/SynTracker/{params.ref}/final_output/{params.ref}_synteny_scores_per_region.csv")
+    run:
+        # Create a temporary directory
+        temp_dir = tempfile.mkdtemp()
+        
+        try:
+            # Copy all input files to the temporary directory
+            for file_path in input.gen:
+                shutil.copy(file_path, temp_dir)
+            
+            # Run SynTracker
+            shell("""
+                SynTracker --out {params.outdir} --ref {params.ref} --target {temp_dir} --cores 8 &> {log}
+            """)
+        finally:
+            # Remove the temporary directory
+            shutil.rmtree(temp_dir)
+'''
 
 rule bakta_multiple:
     input:
-        gen=os.path.join(FASTA,"{file}/{file}.fna"),
-        db=os.path.join(BAKTA, "db/bakta.db"),
+        gen=find_assembly,
+        db=os.path.join(BAKTA, "db/pfam.h3p"),
     params:
         db=os.path.join(BAKTA, "db"),
         name="{file}",
@@ -114,18 +187,20 @@ rule bakta_multiple:
         os.path.join(OUT,"report/bakta_{file}.log"),
     benchmark:
         os.path.join(OUT,"benchmark/bakta_{file}.benchmark"),
+    resources:
+        mem="50G"
     output:
         gen=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff3"),
         faa=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.faa"),
         fna=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.fna"),
     shell:
+#        "bakta --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} --locus-tag {params.name} {input.gen} &> {log}"
         """
-        "bakta --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} --locus-tag {params.name} {input.gen} &> {log}"
+        bakta --force --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} {input.gen} &> {log}
         """
-
 
 # Panaroo is an updated version of Roary to create a pangenome
-# 1 hour for 100 samples, scales linearlly
+# 1 hour for 100 samples, scales linearly
 rule panaroo:
     input:
         gen=expand(os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.gff3"), file=filtered),
@@ -137,12 +212,16 @@ rule panaroo:
         os.path.join(OUT,"report/panaroo.log"),
     benchmark:
         os.path.join(OUT,"benchmark/panaroo.benchmark"),
+    resources:
+        mem="100G"
     output:
         os.path.join(OUT,"Pangenome/Panaroo/pan_genome_reference.fa"),
         os.path.join(OUT,"Pangenome/Panaroo/core_gene_alignment.aln"),
         os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence_roary.csv"),
+        os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence.Rtab"),
     shell:
-        "panaroo -i {input} -o {params} --remove-invalid-genes --clean-mode strict -a core --core_threshold 0.98 --len_dif_percent 0.98 -f 0.7 --merge_paralogs -t 20 &> {log}"
+###        "panaroo -i {input} -o {params} --remove-invalid-genes --clean-mode strict -a core --core_threshold 0.98 --len_dif_percent 0.98 -f 0.7 --merge_paralogs -t 20 &> {log}"
+        "panaroo -i {input} -o {params} --remove-invalid-genes --clean-mode strict -a core --core_threshold 0.98 --len_dif_percent 0.98 -f 0.7 --merge_paralogs -t 24 &> {log}"
 
 # Translate DNA to AA
 rule translate:
@@ -170,12 +249,15 @@ rule bakta_pan:
         os.path.join(OUT,"report/bakta_pan.log"),
     benchmark:
         os.path.join(OUT,"benchmark/bakta_pan.benchmark"),
+    resources:
+        mem="100G"
     output:
         genes=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.tsv"),
         fasta=os.path.join(OUT,"Pangenome/Summary/pan_genome_reference.faa"),
     shell:
-        "bakta_proteins --db {params.db} --output {params.outdir} --prefix {params.name} {input.gen} &> {log}"
+        "bakta_proteins --force --db {params.db} --output {params.outdir} --prefix {params.name} {input.gen} &> {log}"
 
+# Insert bakta pan (there is a bakta protein version that can annotate the pangenome)
 
 # The pangenome is indexed 
 rule bwa_index_pan:
@@ -210,6 +292,8 @@ rule fasttree:
         os.path.join(OUT,"report/fasttree.log"),
     benchmark:
         os.path.join(OUT,"benchmark/fasttree.benchmark"),
+    resources:
+        mem="100G"
     output:
         os.path.join(OUT,"Pangenome/Phylogeny/fasttree.nwk"),
     shell:
@@ -231,10 +315,13 @@ rule raxml:
         os.path.join(OUT,"report/raxml.log"),
     benchmark:
         os.path.join(OUT,"benchmark/raxml.benchmark"),
+    resources:
+        mem="100G"
     output:
         os.path.join(OUT,"Pangenome/Phylogeny/two.raxml.bestTree"),
     shell:
-        "raxml-ng --model GTR+G --msa {input.aln} --tree {input.tre} --seed 12345 --prefix {params.outdir} &> {log}"
+        "raxml-ng --model GTR+G --msa {input.aln} --seed 12345 --prefix {params.outdir} &> {log}"
+#        "raxml-ng --model GTR+G --msa {input.aln} --tree {input.tre} --seed 12345 --prefix {params.outdir} &> {log}"
 
 
 # Continue to build tree from RAXML with iqtree
@@ -253,6 +340,8 @@ rule iqtree:
         os.path.join(OUT,"report/iqtree.log"),
     benchmark:
         os.path.join(OUT,"benchmark/iqtree.benchmark"),
+    resources:
+        mem="100G"
     output:
         os.path.join(OUT,"Pangenome/Summary/core_gene_alignment.aln.iqtree"),
     shell:
@@ -303,7 +392,7 @@ rule unitig:
 
 rule mash_fasta:
     input:
-        expand(os.path.join(FASTA, "{file}/{file}.fna"), file=filtered),
+        get_assembly_files,
     params:
         os.path.join(OUT,"Pangenome/Mash/fasta"),
     conda:
@@ -324,6 +413,8 @@ rule phylogroups:
         os.path.join(OUT,"Pangenome/Mash/"),
     output:
         os.path.join(OUT,"Pangenome/Mash/phylogroups.txt"),
+        os.path.join(OUT,"Pangenome/Mash/pca_df.txt"),
+        os.path.join(OUT,"Pangenome/Mash/tsne_df.txt"),
     run:
         cluster_samples(mash_file=os.path.join(OUT,"Pangenome/Mash/fasta.tsv"), output_folder=os.path.join(OUT,"Pangenome/Mash/"))
 
@@ -354,22 +445,39 @@ rule genes_long:
 
 
 rule gene_matrix_phylogroup:
-    input:
-        genes_long=os.path.join(OUT,"Pangenome/Summary/genes_long.txt"),
-    params:
-        output=os.path.join(OUT,"Pangenome/Summary/"),
-    output:
-        os.path.join(OUT,"Pangenome/Summary/genes_phylogroup_matrix_perc.txt"),
+    input: genes_long=os.path.join(OUT,"Pangenome/Summary/genes_long.txt"),
+    params: output=os.path.join(OUT,"Pangenome/Summary/"),
+    output: os.path.join(OUT,"Pangenome/Summary/genes_phylogroup_matrix_perc.txt"),
     run:
         gene_matrix_phylogroup(genes_long=os.path.join(OUT,"Pangenome/Summary/genes_long.txt"), output=os.path.join(OUT,"Pangenome/Summary/"))
 
 rule gene_matrix:
-    input:
-        genes=os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence_roary.csv"),
-    params:
-        output=os.path.join(OUT,"Pangenome/Summary/"),
-    output:
-        os.path.join(OUT,"Pangenome/Summary/genes_matrix.txt"),
+    input: genes=os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence_roary.csv"),
+    params: output=os.path.join(OUT,"Pangenome/Summary/"),
+    output: os.path.join(OUT,"Pangenome/Summary/genes_matrix.txt"),
     run:
         gene_matrix(genes=os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence_roary.csv"), output=os.path.join(OUT,"Pangenome/Summary/"))
 
+
+rule pangenome_report:
+    input:
+        genes_matrix=os.path.join(OUT,"Pangenome/Summary/genes_matrix.txt"),
+        genes_anno=os.path.join(OUT,"Pangenome/Summary/genes_anno.txt"),
+        genes_rtab=os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence.Rtab"),
+        tree=os.path.join(OUT,"Pangenome/Summary/core_gene_alignment.aln.iqtree"),
+        pca=os.path.join(OUT,"Pangenome/Mash/pca_df.txt"),
+        tsne=os.path.join(OUT,"Pangenome/Mash/tsne_df.txt"),
+        mash=os.path.join(OUT,"Pangenome/Mash/phylogroups.txt"),
+        phylogroups=os.path.join(OUT,"Pangenome/Mash/tsne_df.txt"),
+    params:
+        kegg=KEGG,
+        cog=COG,
+        outdir=os.path.join(OUT, 'Pangenome')
+    conda: "envs/r.yml"
+    log: os.path.join(OUT,"report/pangenome_report.log"),
+    benchmark: os.path.join(OUT,"benchmark/pangenome_report.benchmark"),
+    resources: mem="5G"
+    threads: 1
+    output: os.path.join(OUT,"Pangenome/Summary/Pangenome.Rmd"),
+    shell:
+        "Rscript -e \"rmarkdown::render('panpiper/workflow/scripts/Pangenome.Rmd', params=list(genes_matrix = '{input.genes_matrix}', genes_anno = '{input.genes_anno}', color1 = '#97a7b8', color2 = '#b3ccaa', genes_rtab = '{input.genes_rtab}', tree = '{input.tree}, output = '{params.outdir}', pca = '{input.pca}', tsne = '{input.tsne}', mash = '{input.mash}', phylogroups = '{input.phylogroups}', KEGG = '{params.kegg}', cog = '{params.cog}'))\" &> {log}"
