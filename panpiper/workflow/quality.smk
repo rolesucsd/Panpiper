@@ -40,17 +40,21 @@ def read_complete_files():
         return(raw_reads)
 READS = read_complete_files()
 
+def find_assembly(wildcards):
+    for ext in ['fa', 'fna', 'fasta']:
+        path = os.path.join(FASTA, f"{wildcards.file}.{ext}")
+        if os.path.isfile(path):
+            return path
+    raise ValueError(f"No assembly file found for {path} with extensions .fa, .fna, or .fasta")
+
 # Output
 rule all:
     input:
         SAMPLES_OUT,
 
-
-# Remove contigs smaller than 500 bp
-# 30 sec per filea
 rule contig_filter:
     input:
-        assembly=os.path.join(FASTA,"{file}/contigs.fa"),
+        assembly=find_assembly,
     params:
         contig=500,
     conda:
@@ -67,13 +71,12 @@ rule contig_filter:
     shell:
         "reformat.sh in={input.assembly} out={output} minlength={params.contig} &> {log}"
 
-
 rule run_checkm2:
     input:
         file=os.path.join(OUT,"Quality/Samples/{file}/{file}.fna"),
     params:
-        binset=os.path.join(OUT,"Quality/checkm"),
-        checkmdb="/panfs/roles/Panpiper/panpiper/databases/checkm2/CheckM2_database/uniref100.KO.1.dmnd"
+        binset=os.path.join(OUT,"Quality/Samples/{file}/checkm"),
+        checkmdb="/ddn_scratch/roles/Panpiper/panpiper/databases/checkm2/CheckM2_database/uniref100.KO.1.dmnd"
     conda:
         "envs/checkm2.yml"
     log:
@@ -110,7 +113,7 @@ rule checkm_to_graph:
 rule fastani:
     input:
         ref=REFERENCE,
-        file=os.path.join(OUT,"Quality/{file}/{file}.fna"),
+        file=os.path.join(OUT,"Quality/Samples/{file}/{file}.fna"),
     conda:
         "envs/fastani.yml"
     log:
