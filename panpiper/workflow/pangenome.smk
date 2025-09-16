@@ -1,14 +1,6 @@
-# ----------------------------------------------------------------------------
-# Copyright (c) 2022--, Panpiper development team.
-#
-# Distributed under the terms of the Modified BSD License.
-#
-# The full license is in the file COPYING.txt, distributed with this software.
-# ----------------------------------------------------------------------------
-
 """
 Authors: Renee Oles
-Date Updated: 1/4/2022
+Date Updated: 9/16/2025
 Purpose: Construct pangenome
 """
 import os
@@ -35,8 +27,6 @@ param_dict = {x[0]: x[1] for x in fl}
 REF = param_dict["ref"]
 BAKTA = param_dict["bakta_dir"]
 EGGNOG = param_dict['eggnog_dir']
-KEGG = param_dict['kegg_meta']
-COG = param_dict['cog_meta']
 
 # Output
 rule all:
@@ -107,8 +97,6 @@ rule setup:
         {params.path}/setup.sh {input} {params.outdir} &> {log}
         """
 
-# Download databases
-'''
 rule bakta:
     input:
         BAKTA,
@@ -122,7 +110,6 @@ rule bakta:
         os.path.join(BAKTA, "db/pfam.h3p"),
     shell:
         "bakta_db download --output {input} &> {log}"
-'''
 
 rule eggnog_db:
     input:
@@ -137,41 +124,6 @@ rule eggnog_db:
         os.path.join(EGGNOG, "eggnog.db"),
     shell:
         "download_eggnog_data.py --data_dir {input}"
-
-'''
-rule SynTracker:
-    input:
-        gen=expand(os.path.join(OUT, "Pangenome/Bakta/{file}/{file}.fna"), file=filtered)
-    params:
-        outdir=os.path.join(OUT, "Pangenome/SynTracker"),
-        ref=REF
-    conda:
-        "envs/syntracker.yml"
-    log:
-        os.path.join(OUT, "report/SynTracker.log"),
-    benchmark:
-        os.path.join(OUT, "benchmark/SynTracker.benchmark"),
-    resources:
-        mem="50G"
-    output:
-        os.path.join(OUT, "Pangenome/SynTracker/{params.ref}/final_output/{params.ref}_synteny_scores_per_region.csv")
-    run:
-        # Create a temporary directory
-        temp_dir = tempfile.mkdtemp()
-        
-        try:
-            # Copy all input files to the temporary directory
-            for file_path in input.gen:
-                shutil.copy(file_path, temp_dir)
-            
-            # Run SynTracker
-            shell("""
-                SynTracker --out {params.outdir} --ref {params.ref} --target {temp_dir} --cores 8 &> {log}
-            """)
-        finally:
-            # Remove the temporary directory
-            shutil.rmtree(temp_dir)
-'''
 
 rule bakta_multiple:
     input:
@@ -194,9 +146,8 @@ rule bakta_multiple:
         faa=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.faa"),
         fna=os.path.join(OUT,"Pangenome/Bakta/{file}/{file}.fna"),
     shell:
-#        "bakta --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} --locus-tag {params.name} {input.gen} &> {log}"
         """
-        bakta --force --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} {input.gen} &> {log}
+        bakta --skip-pseudo --force --skip-plot --db {params.db} --output {params.outdir} --prefix {params.name} --locus-tag {params.name} {input.gen} &> {log}
         """
 
 # Panaroo is an updated version of Roary to create a pangenome
@@ -220,7 +171,6 @@ rule panaroo:
         os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence_roary.csv"),
         os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence.Rtab"),
     shell:
-###        "panaroo -i {input} -o {params} --remove-invalid-genes --clean-mode strict -a core --core_threshold 0.98 --len_dif_percent 0.98 -f 0.7 --merge_paralogs -t 20 &> {log}"
         "panaroo -i {input} -o {params} --remove-invalid-genes --clean-mode strict -a core --core_threshold 0.98 --len_dif_percent 0.98 -f 0.7 --merge_paralogs -t 24 &> {log}"
 
 # Translate DNA to AA
@@ -401,7 +351,7 @@ rule mash_fasta:
         os.path.join(OUT,"Pangenome/Mash/fasta.tsv"),
     shell:
         """
-        mash sketch -s 10000 -o {params} {input}
+        mash sketch -s 100000 -o {params} {input}
         mash dist {params}.msh {params}.msh -t > {output}
         """
 
@@ -457,27 +407,3 @@ rule gene_matrix:
     output: os.path.join(OUT,"Pangenome/Summary/genes_matrix.txt"),
     run:
         gene_matrix(genes=os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence_roary.csv"), output=os.path.join(OUT,"Pangenome/Summary/"))
-
-
-rule pangenome_report:
-    input:
-        genes_matrix=os.path.join(OUT,"Pangenome/Summary/genes_matrix.txt"),
-        genes_anno=os.path.join(OUT,"Pangenome/Summary/genes_anno.txt"),
-        genes_rtab=os.path.join(OUT,"Pangenome/Panaroo/gene_presence_absence.Rtab"),
-        tree=os.path.join(OUT,"Pangenome/Summary/core_gene_alignment.aln.iqtree"),
-        pca=os.path.join(OUT,"Pangenome/Mash/pca_df.txt"),
-        tsne=os.path.join(OUT,"Pangenome/Mash/tsne_df.txt"),
-        mash=os.path.join(OUT,"Pangenome/Mash/phylogroups.txt"),
-        phylogroups=os.path.join(OUT,"Pangenome/Mash/tsne_df.txt"),
-    params:
-        kegg=KEGG,
-        cog=COG,
-        outdir=os.path.join(OUT, 'Pangenome')
-    conda: "envs/r.yml"
-    log: os.path.join(OUT,"report/pangenome_report.log"),
-    benchmark: os.path.join(OUT,"benchmark/pangenome_report.benchmark"),
-    resources: mem="5G"
-    threads: 1
-    output: os.path.join(OUT,"Pangenome/Summary/Pangenome.Rmd"),
-    shell:
-        "Rscript -e \"rmarkdown::render('panpiper/workflow/scripts/Pangenome.Rmd', params=list(genes_matrix = '{input.genes_matrix}', genes_anno = '{input.genes_anno}', color1 = '#97a7b8', color2 = '#b3ccaa', genes_rtab = '{input.genes_rtab}', tree = '{input.tree}, output = '{params.outdir}', pca = '{input.pca}', tsne = '{input.tsne}', mash = '{input.mash}', phylogroups = '{input.phylogroups}', KEGG = '{params.kegg}', cog = '{params.cog}'))\" &> {log}"
