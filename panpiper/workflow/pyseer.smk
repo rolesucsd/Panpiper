@@ -29,6 +29,7 @@ TREE = config['tree']
 REF = config['ref']
 PHENO = config['pheno']
 PARAMS = config['params']
+PATH = config['scripts']
 
 with open(PARAMS, 'r') as fh:   
     fl = [x.strip().split() for x in fh.readlines()]
@@ -46,12 +47,14 @@ rule all:
 rule pyseer_TREE_to_matrix:
     input:
         TREE
+    params:
+        script=os.path.join(PATH, "phylogeny_distance.py"),
     conda:
         "envs/pyseer.yml"
     output:
         os.path.join(OUT,"phylogeny_similarity.tsv"),
     shell:
-        "python panpiper/workflow/scripts/phylogeny_distance.py --lmm {input} > {output}"
+        "python {params.script} --lmm {input} > {output}"
 
 # GENE ANALYSIS
 rule pyseer_gene_analysis:
@@ -71,13 +74,15 @@ rule pyseer_gene_analysis:
 rule pyseer_filter_genes:
     input:
         os.path.join(OUT,"gene_analysis.txt"),
+    params:
+        script=os.path.join(PATH, "filter_genes.R"),
     conda:
         "envs/r.yml"
     output:
         unitig=os.path.join(OUT,"significant_genes.txt"),
     shell:
         """
-        Rscript panpiper/workflow/scripts/filter_genes.R {input} {output}
+        Rscript {params.script} {input} {output}
         """
 
 # STRUCTURE ANALYSIS
@@ -98,13 +103,15 @@ rule pyseer_structure_analysis:
 rule pyseer_filter_strc:
     input:
         os.path.join(OUT,"struct_analysis.txt")
+    params:
+        script=os.path.join(PATH, "filter_genes.R"),
     conda:
         "envs/r.yml"
     output:
         unitig=os.path.join(OUT,"significant_structure.txt"),
     shell:
         """
-        Rscript panpiper/workflow/scripts/filter_genes.R {input} {output}
+        Rscript {params.script} {input} {output}
         """
 
 # UNITIG ANALYSIS
@@ -126,24 +133,28 @@ rule pyseer_unitig:
 rule pyseer_patterns_unitig:
     input:
         os.path.join(OUT,"unitig_patterns.txt"),
+    params:
+        script=os.path.join(PATH, "count_patterns.py"),
     conda:
         "envs/pyseer.yml"
     output:
         os.path.join(OUT,"unitig_pattern_count.txt"),
     shell:
-        "python panpiper/workflow/scripts/count_patterns.py {input} > {output}"
+        "python {params.script} {input} > {output}"
 
 
 rule pyseer_filter_unitig:
     input:
         pattern=os.path.join(OUT,"unitig_pattern_count.txt"),
         unitig=os.path.join(OUT,"unitig.txt"),
+    params:
+        script=os.path.join(PATH, "filter_kmers.R"),
     conda:
         "envs/r.yml"
     output:
         os.path.join(OUT,"significant_unitig.txt"),
     shell:
-        "Rscript panpiper/workflow/scripts/filter_kmers.R {input.unitig} {input.pattern} {output}"
+        "Rscript {params.script} {input.unitig} {input.pattern} {output}"
 
 
 rule annotate_unitig:
@@ -161,9 +172,11 @@ rule annotate_unitig:
 rule unitig_gene:
     input:
         os.path.join(OUT,"unitig_annotation.txt"),
+    params:
+        script=os.path.join(PATH, "summarise_annotations.py"),
     conda:
         "envs/pyseer.yml"
     output:
        os.path.join(OUT,"unitig_gene_hits.txt"),
     shell:
-        "python panpiper/workflow/scripts/summarise_annotations.py {input} > {output}"
+        "python {params.script} {input} > {output}"

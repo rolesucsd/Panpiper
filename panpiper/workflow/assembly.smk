@@ -19,6 +19,7 @@ import distutils.util
 
 OUT = config['out']
 FASTQ = config['fastq']
+PATH = config['scripts']
 ASSEMBLY_OUT = os.path.join(OUT, 'Assembly/complete_assembly_files.txt')
 (READS,) = glob_wildcards(os.path.join(FASTQ,"{file}_2.fastq.gz"))
 
@@ -54,7 +55,8 @@ rule move_complete:
     input:
         expand(os.path.join(OUT, 'Assembly/{file}/contigs.fa'), file=READS),
     params:
-        os.path.join(OUT, 'Assembly/')
+        outdir=os.path.join(OUT, 'Assembly/'),
+        script=os.path.join(PATH, 'move_files.sh'),
     log:
         os.path.join(OUT,"report/move_complete.log"),
     benchmark:
@@ -63,6 +65,6 @@ rule move_complete:
         ASSEMBLY_OUT,
     shell:
         """
-        chmod u+x panpiper/workflow/scripts/move_files.sh
-        panpiper/workflow/scripts/move_files.sh {params} &> {log}
+        chmod u+x {params.script}
+        {params.script} {params.outdir} &> {log}
         """

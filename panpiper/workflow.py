@@ -54,6 +54,7 @@ class Workflow(object):
                'genes='+self.genes,
                'pheno='+self.pheno,
                'scripts='+self.scripts_dir,
+               'checkm2_dir='+self.checkm2_dir,
                'params='+self.params]
 
         # If run on cluster

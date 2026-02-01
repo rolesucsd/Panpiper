@@ -22,7 +22,7 @@ FASTA = config['fasta']
 REFERENCE = config['ref']
 PARAMS = config['params']
 SAMPLE_LIST = config['list']
-SAMPLES_OUT = os.path.join(OUT, 'Quality/quality_report.html')
+SAMPLES_OUT = os.path.join(OUT, 'Quality/sample_list.txt')
 PATH = config['scripts']
 
 with open(PARAMS, 'r') as fh:   
@@ -33,6 +33,7 @@ PARAMS_REF = param_dict["ref"]
 ANI_CUTOFF = param_dict["ani_cutoff"]
 CONTIG_NUMBER = param_dict["contig_number"]
 N50 = param_dict["n50"]
+CHECKM2_DIR = config['checkm2_dir']
 
 def read_complete_files():
     with open(SAMPLE_LIST) as f:
@@ -76,7 +77,7 @@ rule run_checkm2:
         file=os.path.join(OUT,"Quality/Samples/{file}/{file}.fna"),
     params:
         binset=os.path.join(OUT,"Quality/Samples/{file}/checkm"),
-        checkmdb="/ddn_scratch/roles/Panpiper/panpiper/databases/checkm2/CheckM2_database/uniref100.KO.1.dmnd"
+        checkmdb=os.path.join(CHECKM2_DIR, "CheckM2_database/uniref100.KO.1.dmnd"),
     conda:
         "envs/checkm2.yml"
     log:
@@ -161,32 +162,8 @@ rule filter_files:
         mem="1G"
     threads: 1
     output:
-        os.path.join(OUT,"Quality/sample_list.txt"),
+        SAMPLES_OUT,
     shell:
         """
         python {params.path}/filter_isolates.py -o {params.outpath} -a {input.ani} -k {input.checkm} -r {params.ref} -ac {params.ac} -n {params.n} &> {log}
         """
-
-rule print_results:
-    input:
-        ani=os.path.join(OUT,"Quality/FastANI/fastani_summary.txt"),
-        checkm=os.path.join(OUT,"Quality/CheckM/checkm_cat.txt"),
-        passed=os.path.join(OUT,"Quality/sample_list.txt"),
-    params:
-        ref=PARAMS_REF,
-        outdir=os.path.join(OUT, 'Quality')
-    conda:
-        "envs/r.yml"
-    log:
-        os.path.join(OUT,"report/print_results.log"),
-    benchmark:
-        os.path.join(OUT,"benchmark/print_results.benchmark"),    
-    resources:
-        mem="5G"
-    threads: 1
-    output:
-        SAMPLES_OUT,
-    shell:
-        "Rscript -e \"rmarkdown::render('panpiper/workflow/scripts/quality_report.Rmd', output_dir = '{params.outdir}', params=list(checkm = '{input.checkm}', ani = '{input.ani}', passed = '{input.passed}', ref = '{params.ref}'))\" &> {log}"
-
-

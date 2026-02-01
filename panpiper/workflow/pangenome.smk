@@ -37,7 +37,6 @@ rule all:
         os.path.join(OUT,"Pangenome/Summary/genes_phylogroup_matrix_perc.txt"),
         os.path.join(OUT,"Pangenome/Summary/genes_anno.txt"),
         os.path.join(OUT,"Pangenome/Summary/genes_matrix.txt"),
-        os.path.join(OUT,"Pangenome/Summary/Pangenome.Rmd"),    
 
 def find_assembly(wildcards):
     for ext in ['fa', 'fna', 'fasta']:
