@@ -90,6 +90,8 @@ def cli():
                      default=os.path.join(_ROOT, "databases", "eggnog"), type=str)
     app.add_argument('--bakta_dir', help='Path to the bakta database directory',
                      default=os.path.join(_ROOT, "databases", "bakta"), type=str)
+    app.add_argument('--checkm2_dir', help='Path to the CheckM2 database directory',
+                     default=os.path.join(_ROOT, "databases", "checkm2"), type=str)
     app.add_argument(
         '--pheno_column', help='The column in the phenotype file to use for the association study', type=str)
     app.add_argument(
@@ -107,6 +109,10 @@ def cli():
     # Create the directory if it doesn't exist
     if not os.path.exists(master.bakta_dir):
         os.makedirs(master.bakta_dir)
+
+    # Create the directory if it doesn't exist
+    if not os.path.exists(master.checkm2_dir):
+        os.makedirs(master.checkm2_dir)
 
     wf = Workflow(master)
 

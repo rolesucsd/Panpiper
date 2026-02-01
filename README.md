@@ -1,148 +1,184 @@
-[![Project Status: Active - The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 # Panpiper
 
-This package conducts bacterial isolate analysis for one species.  
+**Panpiper** is a comprehensive Snakemake-based bioinformatics pipeline for bacterial isolate analysis. It provides an end-to-end workflow from raw sequencing reads through genome assembly, quality control, pangenome construction, and genome-wide association studies (GWAS).
 
-* Assembly
-    * Using [shovill](https://github.com/tseemann/shovill) the paired fastq files are assembled and sorted into ones which pass and fail assembly
-* Quality control
-    * The assemblies are analyzed with [CheckM2](https://github.com/chklovski/CheckM2) and [FastANI](https://github.com/ParBLiSS/FastANI)
-    * Based on user-defined thresholds the samples are sorted into ones which pass or don't pass requirements
-* Pangenome analysis
-    * A pangenome is created with the assemblies using [Panaroo](https://github.com/gtonkinhill/panaroo) and annotated with [AMRFinderPlus](https://github.com/ncbi/amr), [Bakta](https://github.com/oschwengers/bakta), and [EggNOG-mapper](https://github.com/eggnogdb/eggnog-mapper)
-    * The core genome alignment is used to create a phylogenetic tree with [FastTree](http://www.microbesonline.org/fasttree/), [RAxML](https://github.com/stamatak/standard-RAxML), and [IQ-TREE](https://github.com/Cibiv/IQ-TREE)
-    * The samples are divided into phylogroups
-* Genome-wide association study
-    * The pangenome is used with a continuous or binary phenotype to conduct a genome-wide association study with [Pyseer](https://github.com/mgalardini/pyseer)
-    * The wrapper scripts used to analyze and filter the data are predominantly taken from the pyseer package.
+## Features
 
-Note: Be sure to cite all packages used in the pipeline. 
+- **Modular Design**: Run individual workflows independently or as a complete pipeline
+- **Reproducible Analysis**: Snakemake-based workflow with isolated Conda environments
+- **Scalable**: Supports local execution and HPC cluster environments
+- **Comprehensive Output**: Generates publication-ready results including phylogenetic trees, gene matrices, and GWAS outputs
 
-Credit: This package structure was inspired by the snakemake workflow [MAGinator](https://github.com/Russel88/MAGinator)
+## Workflows
 
-![Workflow Diagram](workflow.png)
+### Assembly
+Assembles paired-end FASTQ files into contigs using [Shovill](https://github.com/tseemann/shovill).
+
+### Quality Control
+Filters assemblies based on quality metrics using [CheckM2](https://github.com/chklovski/CheckM2) and validates taxonomy with [FastANI](https://github.com/ParBLiSS/FastANI).
+
+### Pangenome Analysis
+Constructs the pangenome using [Panaroo](https://github.com/gtonkinhill/panaroo) with functional annotation via:
+- [Bakta](https://github.com/oschwengers/bakta) - Gene prediction and annotation
+- [AMRFinderPlus](https://github.com/ncbi/amr) - Antimicrobial resistance gene detection
+- [EggNOG-mapper](https://github.com/eggnogdb/eggnog-mapper) - Functional annotation
+
+Phylogenetic trees are constructed using [FastTree](http://www.microbesonline.org/fasttree/), [RAxML](https://github.com/stamatak/standard-RAxML), and [IQ-TREE](https://github.com/Cibiv/IQ-TREE).
+
+### Genome-Wide Association Study
+Performs genotype-phenotype association analysis using [Pyseer](https://github.com/mgalardini/pyseer) with support for:
+- Gene presence/absence analysis
+- Structural variant analysis
+- Unitig (k-mer) analysis
 
 ## Installation
 
-Create package and install dependencies 
+### Prerequisites
+- Conda or Mamba
+- Python 3.8+
 
-```sh
+### Setup
+
+```bash
+# Create and activate environment
 conda create -n panpiper -c bioconda -c conda-forge snakemake mamba
 conda activate panpiper
+
+# Install Panpiper
 pip install panpiper
 ```
 
-Download databases
+### Database Configuration
 
-* The databses necessary will be downloaded automatically except in the case of Kraken2 and EggNOG-mapper. These databases have already been downloaded and are maintained in the package structure. In the case that you would like to use your own database, these databases can be downloaded into user-defined directories and can be referenced in the arguments as follows
+Most databases are downloaded automatically. For custom database locations:
 
-```sh
-panpiper ... --kraken_dir {directory} --eggnog_dir {directory} --bakta_dir {directory}
+```bash
+panpiper ... --checkm2_dir /path/to/checkm2 --eggnog_dir /path/to/eggnog --bakta_dir /path/to/bakta
 ```
 
-## Workflow
+## Usage
 
-Note: The first time these functions are run, they will take a couple minutes before the workflow starts running because the conda dependendies need to be downloaded before start.
+### Assembly
 
-### Assembly: 
-The fastq files should all be in a single directory. They need to be paired-end. 
+Assemble paired-end FASTQ files:
 
-```sh
-panpiper -w assembly -o {output directory} -q {fastq directory} 
+```bash
+panpiper -w assembly -o output_dir/ -q fastq_dir/
 ```
 
-Output:  
-* Assembly/  
-    * incomplete_assembly_files.txt - samples for which assembly failed
-    *  complete_assembly_files.txt - samples for which assemblies passed 
-    * {sample}/  
-        * contigs.fa - edited assembly 
+**Input Requirements:**
+- Directory containing paired-end FASTQ files (`*_1.fastq.gz`, `*_2.fastq.gz`)
 
-### Quality control: 
-The fasta file directory should contain a subdirectory for each sample where the subdirectory name is the sample of the sample. The fasta file within these directories should be formatted as contigs.fa. This is the standard output from Shovill. The sample list should have one sample name per line which corresponds to the directory names. The reference fasta file should be the representative strain of the species which the samples will be compared to using average nucleotide identity.
+**Output:**
+| File | Description |
+|------|-------------|
+| `Assembly/{sample}/contigs.fa` | Assembled contigs per sample |
+| `Assembly/complete_assembly_files.txt` | Samples with successful assemblies |
+| `Assembly/incomplete_assembly_files.txt` | Samples with failed assemblies |
 
-Additional parameters that may be included:
-* --ani_cutoff : percent identity to reference cutoff (default 95)
-* --n50 : N50 cutoff (default 5000)
-* --contig_number : number of contigs cutoff (default 1000)
+### Quality Control
 
-```sh
-panpiper -w quality -o {ouput directory} -a {fasta directory} -s  {sample list} -r {reference fasta file}
+Filter assemblies by quality metrics and taxonomic verification:
+
+```bash
+panpiper -w quality -o output_dir/ -a fasta_dir/ -s sample_list.txt -r reference.fasta
 ```
 
-Output:  
-* Quality/  
-    * sample_list.txt - samples which passed all requirements
-    * failed_samples_checkm.csv  - samples which did not meet checkM thresholds
-    * failed_samples_ani.csv  - samples which did not meet ANI threshold
-    * quality_report.html - html to view the summary of quality of assemblies
-    * CheckM/  
-        * checkm_stats.txt - statistics summary of assemblies
-        * checkm_log.txt  - summary of contamination, completeness, and strain heterogeneity
-        * checkm_log_filter.txt - reformat and filter of checkm_log.txt
-    * FastANI/
-        * fastani_summary.txt - lists percent identity of each sample to the reference
-        * fastani_reformat.csv - reformat of the same file 
-    * Assembly_filter/  
-        * {sample}/ - includes the filtered fasta files removing contigs less than 500bp and all CheckM information
+**Parameters:**
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--ani_cutoff` | 95 | Minimum ANI to reference (%) |
+| `--n50` | 5000 | Minimum N50 value |
+| `--contig_number` | 1000 | Maximum number of contigs |
 
-### Pangenome: 
-The fasta file directory should contain a subdirectory for each sample where the subdirectory name is the sample of the sample. The fasta file within these directories should be formatted as contigs.fa. This is the standard output from Shovill. The sample list should have one sample name per line which corresponds to the directory names. The reference fasta file should be the representative strain of the species which the samples will be compared to using average nucleotide identity.
+**Output:**
+| File | Description |
+|------|-------------|
+| `Quality/sample_list.txt` | Samples passing all criteria |
+| `Quality/failed_samples_checkm.csv` | Samples failing CheckM thresholds |
+| `Quality/failed_samples_ani.csv` | Samples failing ANI threshold |
+| `Quality/quality_report.html` | Visual quality summary |
+| `Quality/CheckM/checkm_cat.txt` | Combined CheckM statistics |
+| `Quality/FastANI/fastani_summary.txt` | ANI results per sample |
 
-```sh
-panpiper -w pangenome  -o {ouput directory} -a {fasta directory} -s  {sample list} -r {reference fasta file}
+### Pangenome Analysis
+
+Construct and analyze the pangenome:
+
+```bash
+panpiper -w pangenome -o output_dir/ -a fasta_dir/ -s sample_list.txt -r reference.fasta
 ```
 
-Output:  
-* Pangenome/  
-    * Bakta/  
-        * {sample}/ - contains Bakta output for each sample
-    * Unitig/  
-        * unitig.pyseer.gz - the full unitig summary of all samples
-    * Phylogeny/ - contains the intermediate trees 
-    * Panaroo/ - contains the full pangenome summary as well as Bakta annotation for the pangenome
-    * AMR/ - contains the full AMR report for each sample
-    * Phylogroups/ - contains the full division process for phylogroups
-    * Summary/  
-        * AMR.txt - the summary of AMR hits
-        * amr.png - visualization of AMR as a heatmap
-        * amr_wide.txt - reformat of AMR hits from long to wide
-        * core_gene_alignment.aln.iqtree - the final nwk tree
-        * mash.tsv - the full mash distance matrix 
-        * pan_genome_reference.faa - all the proteins in the pangenome
-        * pan_genome_reference.tsv - the list of all proteins in the pangenome
-        * Summary.emapper.annotations - Eggnog-Mapper annotation
-        * genes_anno.txt - annotation of each protein in the pangenome
-        * genes_long.txt - dataframe of each protein in the pangenome and corresponding proteins in each isolate
-        * genes_matrix.txt - a matrix of gene presence/absence for all isolates 
+**Output:**
+| Directory/File | Description |
+|----------------|-------------|
+| `Pangenome/Bakta/` | Per-sample gene annotations |
+| `Pangenome/Panaroo/` | Pangenome matrices and alignments |
+| `Pangenome/AMR/` | Antimicrobial resistance reports |
+| `Pangenome/Unitig/unitig.pyseer` | Unitig output for GWAS |
+| `Pangenome/Summary/core_gene_alignment.aln.iqtree` | Final phylogenetic tree (Newick) |
+| `Pangenome/Summary/genes_matrix.txt` | Gene presence/absence matrix |
+| `Pangenome/Summary/genes_anno.txt` | Gene annotations |
 
-#### Visualization tools:
-This output can further be visualized using the streamlit app [Panpiper streamlit](https://panpiper.streamlit.app/)
+### Genome-Wide Association Study
 
-### Genome-wide association study: 
-The gene and structure presence/absence files should be the result of Panaroo or Roary - from Panaroo this is the .RTab file. The unitig file is a result of unitig-caller; this file should be gzipped. The tree file can be any newick tree - if this pipeline has been followed to this point, we would recommend the tree file from iqtree. Finally, the reference file is a tab-delimited list of files to be used for unitig annotation. The format is file.fna file.gff2 {draft, ref}. 
+Perform association analysis between genotype and phenotype:
 
-```sh
-panpiper -w pyseer  -o {ouput directory} -g {gene presence absence file} -p {structure presence absence file} -u {unitig file} -t {tree file from iqtree} -r {reference file}
+```bash
+panpiper -w pyseer -o output_dir/ \
+    -g gene_presence_absence.Rtab \
+    -p struct_presence_absence.Rtab \
+    -u unitig.pyseer.gz \
+    -t tree.nwk \
+    -f phenotypes.txt \
+    -r references.txt \
+    --pheno_column trait_name
 ```
 
-Output:   
-* Pyseer/  
-    * {variable_name}/  
-        * unitig_pattern_count.txt - a summary of tests conducted for p-value correction
-        * unitig_gene_hits.txt - the genes which significant unitig hits match to
-        * unitig.txt - the association study results for each unitig
-        * significant_unitig.txt - the unitig.txt file filtered for significance 
-        * struct_analysis.txt - the associtaiton study results for each structural variant
-        * significant_structure.txt - the structural variant results filtered for significance
-        * gene_analysis.txt - the associtaiton study results for each gene 
-        * significant_genes.txt - the gene results filtered for significance
-        * phylogeny_similarity.tsv - a matrix of similarity to use as a covariate to correct for population structure in the model
+**Input Requirements:**
+- Gene presence/absence matrix (`.Rtab` from Panaroo)
+- Structure presence/absence matrix
+- Unitig file (gzipped)
+- Phylogenetic tree (Newick format)
+- Phenotype file (tab-delimited with sample names)
+- Reference file for unitig annotation
 
-### Run on a compute cluster
-To run on a compute cluster, a profile folder must be specified which should contain a config.yaml file. Details on what to include in the config file can be found [here](https://snakemake.readthedocs.io/en/stable/executing/cli.html#profiles).
+**Output:**
+| File | Description |
+|------|-------------|
+| `Pyseer/{phenotype}/gene_analysis.txt` | Gene association results |
+| `Pyseer/{phenotype}/significant_genes.txt` | Significant gene hits |
+| `Pyseer/{phenotype}/unitig.txt` | Unitig association results |
+| `Pyseer/{phenotype}/significant_unitig.txt` | Significant unitig hits |
+| `Pyseer/{phenotype}/unitig_gene_hits.txt` | Annotated significant unitigs |
+| `Pyseer/{phenotype}/struct_analysis.txt` | Structural variant results |
 
-```sh
-panpiper ... --cluster --profile {profile folder}
+## Cluster Execution
+
+For HPC cluster execution, provide a Snakemake profile:
+
+```bash
+panpiper ... --cluster --profile profile_dir/
 ```
+
+The profile directory must contain a `config.yaml` file. See [Snakemake profiles documentation](https://snakemake.readthedocs.io/en/stable/executing/cli.html#profiles) for configuration details.
+
+## Visualization
+
+Results can be visualized using the interactive [Panpiper Streamlit App](https://panpiper.streamlit.app/).
+
+## Citation
+
+If you use Panpiper in your research, please cite the individual tools used in the pipeline:
+- Shovill, CheckM2, FastANI, Panaroo, Bakta, AMRFinderPlus, EggNOG-mapper, FastTree, RAxML, IQ-TREE, Pyseer
+
+## Acknowledgments
+
+Pipeline architecture inspired by [MAGinator](https://github.com/Russel88/MAGinator).
+
+## License
+
+This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.

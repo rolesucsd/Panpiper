@@ -33,6 +33,7 @@ PARAMS_REF = param_dict["ref"]
 ANI_CUTOFF = param_dict["ani_cutoff"]
 CONTIG_NUMBER = param_dict["contig_number"]
 N50 = param_dict["n50"]
+CHECKM2_DIR = config['checkm2_dir']
 
 def read_complete_files():
     with open(SAMPLE_LIST) as f:
@@ -76,7 +77,7 @@ rule run_checkm2:
         file=os.path.join(OUT,"Quality/Samples/{file}/{file}.fna"),
     params:
         binset=os.path.join(OUT,"Quality/Samples/{file}/checkm"),
-        checkmdb="/ddn_scratch/roles/Panpiper/panpiper/databases/checkm2/CheckM2_database/uniref100.KO.1.dmnd"
+        checkmdb=os.path.join(CHECKM2_DIR, "CheckM2_database/uniref100.KO.1.dmnd"),
     conda:
         "envs/checkm2.yml"
     log:
@@ -174,19 +175,20 @@ rule print_results:
         passed=os.path.join(OUT,"Quality/sample_list.txt"),
     params:
         ref=PARAMS_REF,
-        outdir=os.path.join(OUT, 'Quality')
+        outdir=os.path.join(OUT, 'Quality'),
+        rmd=os.path.join(PATH, "quality_report.Rmd"),
     conda:
         "envs/r.yml"
     log:
         os.path.join(OUT,"report/print_results.log"),
     benchmark:
-        os.path.join(OUT,"benchmark/print_results.benchmark"),    
+        os.path.join(OUT,"benchmark/print_results.benchmark"),
     resources:
         mem="5G"
     threads: 1
     output:
         SAMPLES_OUT,
     shell:
-        "Rscript -e \"rmarkdown::render('panpiper/workflow/scripts/quality_report.Rmd', output_dir = '{params.outdir}', params=list(checkm = '{input.checkm}', ani = '{input.ani}', passed = '{input.passed}', ref = '{params.ref}'))\" &> {log}"
+        "Rscript -e \"rmarkdown::render('{params.rmd}', output_dir = '{params.outdir}', params=list(checkm = '{input.checkm}', ani = '{input.ani}', passed = '{input.passed}', ref = '{params.ref}'))\" &> {log}"
 
 
