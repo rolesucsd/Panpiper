@@ -100,7 +100,6 @@ panpiper -w quality -o output_dir/ -a fasta_dir/ -s sample_list.txt -r reference
 | `Quality/sample_list.txt` | Samples passing all criteria |
 | `Quality/failed_samples_checkm.csv` | Samples failing CheckM thresholds |
 | `Quality/failed_samples_ani.csv` | Samples failing ANI threshold |
-| `Quality/quality_report.html` | Visual quality summary |
 | `Quality/CheckM/checkm_cat.txt` | Combined CheckM statistics |
 | `Quality/FastANI/fastani_summary.txt` | ANI results per sample |
 
